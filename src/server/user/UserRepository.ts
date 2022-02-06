@@ -15,11 +15,9 @@ export class UserMemoryRepository extends Repository implements IUserRepository 
   }
 
   addUser(user: User): string {
-    const userUuid = uuidV4();
+    this.users.set(user.uuid, user);
 
-    this.users.set(userUuid, user);
-
-    return userUuid;
+    return user.uuid;
   }
 
   getUser(uuid: string): User | null {

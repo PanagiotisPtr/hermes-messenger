@@ -1,12 +1,17 @@
 import WebSocket, { RawData, WebSocketServer } from 'ws';
+import { MemoryDB } from './common/infra/MemoryDB';
 import { config as actionConfig } from './config/actions.config';
 import { ConnectionRepository } from './connection/ConnectionRepository';
 import { ConnectionStorage } from './connection/ConnectionStorage';
 import { WebSocketHandler } from './handlers/Handler';
+import { User } from './user/User';
+import { UserMemoryRepository } from './user/UserRepository';
 
 const wss = new WebSocketServer({ port: 3000 });
 
 const connectionStorage: ConnectionStorage = new Map();
+
+const memoryDb = new MemoryDB();
 
 interface WebSocketAction {
   action: string;

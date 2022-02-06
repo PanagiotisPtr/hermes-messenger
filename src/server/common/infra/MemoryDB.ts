@@ -1,7 +1,7 @@
 import { table } from 'console';
 import { Entity } from '../entity/Entity';
 
-type EntityClass<E extends Entity> = new(...args: any) => E;
+type EntityClass<E extends Entity<any>> = new(...args: any) => E;
 
 /** MemoryDB
  *
@@ -12,13 +12,13 @@ type EntityClass<E extends Entity> = new(...args: any) => E;
  * MemoryDB<User.constructor.name, <someUsersUuid, SomeUserEntity> >
  */
 export class MemoryDB {
-  private data: Map<string, Map<string, Entity>>;
+  private data: Map<string, Map<string, Entity<any>>>;
 
   constructor() {
-    this.data = new Map<string, Map<string, Entity>>();
+    this.data = new Map<string, Map<string, Entity<any>>>();
   }
 
-  getTableForEntity<E extends Entity>(entity: EntityClass<E>): Map<string, E> | null {
+  getTableForEntity<E extends Entity<any>>(entity: EntityClass<E>): Map<string, E> | null {
     const table = this.data.get(entity.constructor.name);
     if (table) {
       return table as Map<string, E>;
@@ -27,7 +27,7 @@ export class MemoryDB {
     return null;
   }
 
-  createTableForEntity<E extends Entity>(entity: EntityClass<E>): void {
+  createTableForEntity<E extends Entity<any>>(entity: EntityClass<E>): void {
     if (this.data.has(entity.constructor.name)) {
       return;
     }
@@ -35,7 +35,7 @@ export class MemoryDB {
     this.data.set(entity.constructor.name, new Map<string, E>());
   }
 
-  getOrCreateTableForEntity<E extends Entity>(entity: EntityClass<E>): Map<string, E> {
+  getOrCreateTableForEntity<E extends Entity<any>>(entity: EntityClass<E>): Map<string, E> {
     if (this.getTableForEntity(entity) === null) {
       this.createTableForEntity(entity);
     }
