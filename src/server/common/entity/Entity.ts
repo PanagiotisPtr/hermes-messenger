@@ -1,11 +1,11 @@
 import { v4 as uuidV4 } from 'uuid';
 
-export class Entity<Attributes> {
+export class Entity<Props> {
   public readonly uuid: string;
-  protected attributes: Attributes;
+  protected props: Props;
 
-  constructor(attributes: Attributes, uuid?: string) {
+  constructor(props: Props, uuid?: string) {
     this.uuid = uuid ? uuid : uuidV4();
-    this.attributes = attributes;
+    this.props = props;
   }
 };

@@ -1,11 +1,11 @@
 import { Entity } from '../common/entity/Entity';
 
-interface UserAttributes {
+interface UserProps {
   username: string;
 }
 
-export class User extends Entity<UserAttributes> {
+export class User extends Entity<UserProps> {
   get username(): string {
-    return this.username;
+    return this.props.username;
   }
 }
