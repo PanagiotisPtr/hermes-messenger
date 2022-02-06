@@ -1,6 +1,5 @@
 import Repository from '../common/repository/Repository';
 import { User } from './User';
-import { v4 as uuidV4 } from 'uuid';
 import { IUserRepository } from './IUserRepository';
 import { MemoryDB } from '../common/infra/MemoryDB';
 

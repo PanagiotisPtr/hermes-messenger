@@ -1,4 +1,5 @@
 import { Entity } from '../common/entity/Entity';
+import { User } from '../user/User';
 
 interface IMessageProps {
   from: User;
@@ -6,7 +7,7 @@ interface IMessageProps {
   content: string;
 }
 
-export class User extends Entity<IMessageProps> {
+export class Message extends Entity<IMessageProps> {
   get from(): User {
     return this.props.from;
   }
