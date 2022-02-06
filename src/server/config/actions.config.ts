@@ -5,7 +5,7 @@ import HelloHandler from '../handlers/HelloHandler';
 
 interface ActionsConfig {
   [action: string]: {
-    handlerClass: HandlerClass,
+    handlerClass: new(...args: any) => HandlerClass,
     repositories: RepositoryClass[]
   }
 }

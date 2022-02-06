@@ -3,7 +3,6 @@ import { config as actionConfig } from './config/actions.config';
 import { ConnectionRepository } from './connection/ConnectionRepository';
 import { ConnectionStorage } from './connection/ConnectionStorage';
 import { WebSocketHandler } from './handlers/Handler';
-import HelloHandler from './handlers/HelloHandler';
 
 const wss = new WebSocketServer({ port: 3000 });
 
