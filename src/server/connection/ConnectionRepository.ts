@@ -1,11 +1,14 @@
 import { v4 as uuidV4 } from 'uuid';
 import WebSocket from 'ws';
+import Repository from '../common/repository/Repository';
 import { ConnectionStorage } from './ConnectionStorage';
 
-export class ConnectionRepository {
+export class ConnectionRepository extends Repository {
   constructor(
     private connections: ConnectionStorage
-  ) {}
+  ) {
+    super();
+  }
 
   addConnection(ws: WebSocket): string {
     const connectionUuid = uuidV4();

@@ -1,8 +1,9 @@
 import WebSocket, { RawData, WebSocketServer } from 'ws';
+import { config as actionConfig } from './config/actions.config';
 import { ConnectionRepository } from './connection/ConnectionRepository';
 import { ConnectionStorage } from './connection/ConnectionStorage';
 import { WebSocketHandler } from './handlers/Handler';
-import { getHelloHandler } from './handlers/HelloHandler';
+import HelloHandler from './handlers/HelloHandler';
 
 const wss = new WebSocketServer({ port: 3000 });
 
@@ -23,9 +24,12 @@ const isWebSocketAction = (something: any): something is WebSocketAction => {
 
 const handlers = new Map<string, WebSocketHandler>();
 
-handlers.set('hello', getHelloHandler(
-  new ConnectionRepository(connectionStorage)
-));
+for (const [action, handlerData] of Object.entries(actionConfig)) {
+  const repos = handlerData.repositories.map(repoClass => new repoClass(connectionStorage));
+  const handlerClass = new handlerData.handlerClass(...repos);
+
+  handlers.set(action, handlerClass.handler);
+}
 
 wss.on('connection', function connection(ws: WebSocket) {
   const connectionRepo = new ConnectionRepository(connectionStorage);
