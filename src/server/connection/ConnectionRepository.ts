@@ -1,11 +1,15 @@
+import { inject, injectable } from 'inversify';
 import { v4 as uuidV4 } from 'uuid';
 import WebSocket from 'ws';
 import Repository from '../common/repository/Repository';
+import { TYPES } from '../types';
 import { ConnectionStorage } from './ConnectionStorage';
+import { IConnectionRepository } from './IConnectionRepository';
 
-export class ConnectionRepository extends Repository {
+@injectable()
+export class ConnectionRepository extends Repository implements IConnectionRepository {
   constructor(
-    private connections: ConnectionStorage
+    @inject(TYPES.ConnectionStorage) private connections: ConnectionStorage
   ) {
     super();
   }

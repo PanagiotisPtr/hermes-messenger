@@ -2,12 +2,15 @@ import Repository from '../common/repository/Repository';
 import { Message } from './Message';
 import { IMessageRepository } from './IMessageRepository';
 import { MemoryDB } from '../common/infra/MemoryDB';
+import { inject, injectable } from 'inversify';
+import { TYPES } from '../types';
 
+@injectable()
 export class MessageMemoryRepository extends Repository implements IMessageRepository {
   private messages: Map<string, Message>;
 
   constructor(
-    memoryDB: MemoryDB
+    @inject(TYPES.MemoryDB) memoryDB: MemoryDB
   ) {
     super();
     this.messages = memoryDB.getOrCreateTableForEntity(Message);

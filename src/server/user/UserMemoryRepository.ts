@@ -2,12 +2,15 @@ import Repository from '../common/repository/Repository';
 import { User } from './User';
 import { IUserRepository } from './IUserRepository';
 import { MemoryDB } from '../common/infra/MemoryDB';
+import { inject, injectable } from 'inversify';
+import { TYPES } from '../types';
 
+@injectable()
 export class UserMemoryRepository extends Repository implements IUserRepository {
   private users: Map<string, User>;
 
   constructor(
-    memoryDB: MemoryDB
+    @inject(TYPES.MemoryDB) memoryDB: MemoryDB
   ) {
     super();
     this.users = memoryDB.getOrCreateTableForEntity(User);

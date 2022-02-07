@@ -1,17 +1,23 @@
+import 'reflect-metadata';
 import WebSocket, { RawData, WebSocketServer } from 'ws';
-import { MemoryDB } from './common/infra/MemoryDB';
 import { config as actionConfig } from './config/actions.config';
-import { ConnectionRepository } from './connection/ConnectionRepository';
-import { ConnectionStorage } from './connection/ConnectionStorage';
 import { WebSocketHandler } from './handlers/Handler';
 import { User } from './user/User';
-import { UserMemoryRepository } from './user/UserRepository';
+import { applicationContainer } from './inversify.config';
+import { TYPES } from './types';
+import { IConnectionRepository } from './connection/IConnectionRepository';
+import { IUserRepository } from './user/IUserRepository';
 
 const wss = new WebSocketServer({ port: 3000 });
 
-const connectionStorage: ConnectionStorage = new Map();
+const userRepo = applicationContainer.get<IUserRepository>(TYPES.UserRepository);
 
-const memoryDb = new MemoryDB();
+const Bob = new User({ username: 'Bob' });
+userRepo.addUser(Bob);
+console.log(userRepo.getUser(Bob.uuid));
+
+const anotherUserRepo = applicationContainer.get<IUserRepository>(TYPES.UserRepository);
+console.log(anotherUserRepo.getUser(Bob.uuid));
 
 interface WebSocketAction {
   action: string;
@@ -27,16 +33,12 @@ const isWebSocketAction = (something: any): something is WebSocketAction => {
 };
 
 const handlers = new Map<string, WebSocketHandler>();
-
-for (const [action, handlerData] of Object.entries(actionConfig)) {
-  const repos = handlerData.repositories.map(repoClass => new repoClass(connectionStorage));
-  const handlerClass = new handlerData.handlerClass(...repos);
-
-  handlers.set(action, handlerClass.handler);
+for (const [action, handlerClass] of Object.entries(actionConfig)) {
+  handlers.set(action, applicationContainer.resolve(handlerClass).handler);
 }
 
 wss.on('connection', function connection(ws: WebSocket) {
-  const connectionRepo = new ConnectionRepository(connectionStorage);
+  const connectionRepo = applicationContainer.get<IConnectionRepository>(TYPES.ConnectionRepository);
 
   const connectionUuid = connectionRepo.addConnection(ws);
 
