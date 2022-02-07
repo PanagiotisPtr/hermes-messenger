@@ -1,4 +1,4 @@
-import { table } from 'console';
+import { injectable } from 'inversify';
 import { Entity } from '../entity/Entity';
 
 type EntityClass<E extends Entity<any>> = new(...args: any) => E;
@@ -11,6 +11,7 @@ type EntityClass<E extends Entity<any>> = new(...args: any) => E;
  *
  * MemoryDB<User.constructor.name, <someUsersUuid, SomeUserEntity> >
  */
+@injectable()
 export class MemoryDB {
   private data: Map<string, Map<string, Entity<any>>>;
 

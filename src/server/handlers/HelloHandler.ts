@@ -1,9 +1,13 @@
-import { ConnectionRepository } from '../connection/ConnectionRepository';
+import { inject, injectable } from 'inversify';
+import { IConnectionRepository } from '../connection/IConnectionRepository';
+import { TYPES } from '../types';
 import { WebSocketEvent, WebSocketHandler } from './Handler';
 
-export default class HelloHandler {
+@injectable()
+class HelloHandler {
   constructor(
-    private connectionRepository: ConnectionRepository
+    @inject(TYPES.ConnectionRepository)
+    private connectionRepository: IConnectionRepository
   ) {}
 
   get handler(): WebSocketHandler {
@@ -17,3 +21,5 @@ export default class HelloHandler {
     };
   }
 }
+
+export default HelloHandler;
