@@ -2,22 +2,11 @@ import 'reflect-metadata';
 import WebSocket, { RawData, WebSocketServer } from 'ws';
 import { config as actionConfig } from './config/actions.config';
 import { WebSocketHandler } from './handlers/Handler';
-import { User } from './user/User';
 import { applicationContainer } from './inversify.config';
 import { TYPES } from './types';
 import { IConnectionRepository } from './connection/IConnectionRepository';
-import { IUserRepository } from './user/IUserRepository';
 
 const wss = new WebSocketServer({ port: 3000 });
-
-const userRepo = applicationContainer.get<IUserRepository>(TYPES.UserRepository);
-
-const Bob = new User({ username: 'Bob' });
-userRepo.addUser(Bob);
-console.log(userRepo.getUser(Bob.uuid));
-
-const anotherUserRepo = applicationContainer.get<IUserRepository>(TYPES.UserRepository);
-console.log(anotherUserRepo.getUser(Bob.uuid));
 
 interface WebSocketAction {
   action: string;
