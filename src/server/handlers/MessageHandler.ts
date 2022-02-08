@@ -1,13 +1,19 @@
 import { inject, injectable } from 'inversify';
 import { IConnectionRepository } from '../connection/IConnectionRepository';
+import { IMessageRepository } from '../message/IMessageRepository';
 import { TYPES } from '../types';
+import { IUserRepository } from '../user/IUserRepository';
 import { WebSocketEvent, WebSocketHandler } from './Handler';
 
 @injectable()
-class HelloHandler {
+class MessageHandler {
   constructor(
     @inject(TYPES.IConnectionRepository)
-    private connectionRepository: IConnectionRepository
+    private connectionRepository: IConnectionRepository,
+    @inject(TYPES.IUserRepository)
+    private userRepository: IUserRepository,
+    @inject(TYPES.IMessageRepository)
+    private messageRepository: IMessageRepository
   ) {}
 
   get handler(): WebSocketHandler {
@@ -22,4 +28,4 @@ class HelloHandler {
   }
 }
 
-export default HelloHandler;
+export default MessageHandler;

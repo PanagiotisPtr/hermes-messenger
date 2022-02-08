@@ -1,4 +1,5 @@
 export interface WebSocketEvent {
+  uuid: string;
   payload: string;
   metadata: {
     connectionUuid: string;
@@ -6,4 +7,4 @@ export interface WebSocketEvent {
   };
 }
 
-export type WebSocketHandler = (event: any) => Promise<any>;
+export type WebSocketHandler = (event: WebSocketEvent) => Promise<any>;

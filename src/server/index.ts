@@ -5,6 +5,9 @@ import { WebSocketHandler } from './handlers/Handler';
 import { applicationContainer } from './inversify.config';
 import { TYPES } from './types';
 import { IConnectionRepository } from './connection/IConnectionRepository';
+import { v4 as uuidV4 } from 'uuid';
+import { IUserRepository } from './user/IUserRepository';
+import { User } from './user/User';
 
 const wss = new WebSocketServer({ port: 3000 });
 
@@ -26,10 +29,15 @@ for (const [action, handlerClass] of Object.entries(actionConfig)) {
   handlers.set(action, applicationContainer.resolve(handlerClass).handler);
 }
 
+let userCount = 1;
 wss.on('connection', function connection(ws: WebSocket) {
-  const connectionRepo = applicationContainer.get<IConnectionRepository>(TYPES.ConnectionRepository);
-
+  const connectionRepo = applicationContainer.get<IConnectionRepository>(TYPES.IConnectionRepository);
   const connectionUuid = connectionRepo.addConnection(ws);
+
+  // @TODO should have registered and logged in / gotten token before connecting to the websocket server
+  const userRepo = applicationContainer.get<IUserRepository>(TYPES.IUserRepository);
+  const connectedUser = new User({ username: `User ${userCount++}` });
+  userRepo.addUser(connectedUser);
 
   ws.on('message', (data: RawData) => {
     ws.send(connectionUuid);
@@ -44,6 +52,7 @@ wss.on('connection', function connection(ws: WebSocket) {
       const handler = handlers.get(messageObject.action);
       if (handler !== undefined) {
         handler({
+          uuid: uuidV4(),
           payload: messageObject.payload,
           metadata: {
             connectionUuid

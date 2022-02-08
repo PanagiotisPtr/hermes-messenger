@@ -12,8 +12,8 @@ import { UserMemoryRepository } from './user/UserMemoryRepository';
 const applicationContainer = new Container();
 applicationContainer.bind<MemoryDB>(TYPES.MemoryDB).to(MemoryDB).inSingletonScope();
 applicationContainer.bind<ConnectionStorage>(TYPES.ConnectionStorage).toConstantValue(new Map());
-applicationContainer.bind<IConnectionRepository>(TYPES.ConnectionRepository).to(ConnectionRepository);
-applicationContainer.bind<IUserRepository>(TYPES.UserRepository).to(UserMemoryRepository);
-applicationContainer.bind<IMessageRepository>(TYPES.MessageRepository).to(MessageMemoryRepository);
+applicationContainer.bind<IConnectionRepository>(TYPES.IConnectionRepository).to(ConnectionRepository);
+applicationContainer.bind<IUserRepository>(TYPES.IUserRepository).to(UserMemoryRepository);
+applicationContainer.bind<IMessageRepository>(TYPES.IMessageRepository).to(MessageMemoryRepository);
 
 export { applicationContainer };
