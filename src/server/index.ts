@@ -36,7 +36,10 @@ wss.on('connection', function connection(ws: WebSocket) {
 
   // @TODO should have registered and logged in / gotten token before connecting to the websocket server
   const userRepo = applicationContainer.get<IUserRepository>(TYPES.IUserRepository);
-  const connectedUser = new User({ username: `User ${userCount++}` });
+  const connectedUser = new User({
+    username: `User ${userCount++}`,
+    activeConnections: new Set()
+  });
   userRepo.addUser(connectedUser);
 
   ws.on('message', (data: RawData) => {
