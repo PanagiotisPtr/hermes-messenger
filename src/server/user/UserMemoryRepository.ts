@@ -37,4 +37,28 @@ export class UserMemoryRepository extends Repository implements IUserRepository 
       this.users.delete(uuid);
     }
   }
+
+  getUserFromConnectionUuid(connectionUuid: string): User | null {
+    for (const user of this.users.values()) {
+      for (const userConnectionUuid of user.activeConnections) {
+        console.log(user.username);
+        console.log(user.activeConnections);
+        if (userConnectionUuid === connectionUuid) {
+          return user;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  getUserFromUsername(username: string): User | null {
+    for (const user of this.users.values()) {
+      if (user.username === username) {
+        return user;
+      }
+    }
+
+    return null;
+  }
 }

@@ -1,6 +1,7 @@
 import { inject, injectable } from 'inversify';
 import { IConnectionRepository } from '../connection/IConnectionRepository';
 import { IMessageRepository } from '../message/IMessageRepository';
+import { Message } from '../message/Message';
 import { TYPES } from '../types';
 import { IUserRepository } from '../user/IUserRepository';
 import { WebSocketEvent, WebSocketHandler } from './Handler';
@@ -18,12 +19,32 @@ class MessageHandler {
 
   get handler(): WebSocketHandler {
     return async (event: WebSocketEvent) => {
-      const ws = this.connectionRepository.getConnection(event.metadata.connectionUuid);
-      if (ws === null) {
-        return;
+      const fromConnectionUuid = event.metadata.connectionUuid;
+      const fromConnection = this.connectionRepository.getConnection(fromConnectionUuid);
+      console.log(fromConnectionUuid);
+      const fromUser = this.userRepository.getUserFromConnectionUuid(fromConnectionUuid);
+
+      if (!fromUser) {
+        fromConnection?.send('no from user');
       }
 
-      ws.send('hello ' + event.metadata.connectionUuid);
+      const payload = JSON.parse(event.payload);
+      if (!payload.to || !payload.message) {
+        fromConnection?.send('invalid payload');
+      }
+
+      const toUser = this.userRepository.getUserFromUsername(payload.to);
+      if (toUser === null) {
+        fromConnection?.send('invalid receiver');
+      } else {
+        const message = new Message({ from: fromUser!, to: toUser, content: payload.message });
+        this.messageRepository.addMessage(message);
+        const toConnectionUuids = toUser.activeConnections;
+        for (const toConnectionUuid of toConnectionUuids) {
+          const toConnection = this.connectionRepository.getConnection(toConnectionUuid);
+          toConnection?.send(payload.message);
+        }
+      }
     };
   }
 }

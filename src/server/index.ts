@@ -40,7 +40,13 @@ wss.on('connection', function connection(ws: WebSocket) {
     username: `User ${userCount++}`,
     activeConnections: new Set()
   });
+  connectedUser.addConnection(connectionUuid);
   userRepo.addUser(connectedUser);
+
+  console.log('User connected:', {
+    username: connectedUser.username,
+    connections: connectedUser.activeConnections
+  });
 
   ws.on('message', (data: RawData) => {
     ws.send(connectionUuid);
@@ -69,6 +75,7 @@ wss.on('connection', function connection(ws: WebSocket) {
 
   ws.on('close', (_code: number, _reason: Buffer) => {
     connectionRepo.removeConnection(connectionUuid);
+    connectedUser.removeConnection(connectionUuid);
   });
 
   ws.send('something');

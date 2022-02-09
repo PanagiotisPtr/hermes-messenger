@@ -5,4 +5,6 @@ export interface IUserRepository extends Repository {
   addUser(user: User): string;
   getUser(uuid: string): User | null;
   removeUser(uuid: string): void;
+  getUserFromConnectionUuid(connectionUuid: string): User | null;
+  getUserFromUsername(username: string): User | null;
 }
