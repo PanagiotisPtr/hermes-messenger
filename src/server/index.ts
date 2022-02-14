@@ -1,13 +1,14 @@
 import 'reflect-metadata';
 import WebSocket, { RawData, WebSocketServer } from 'ws';
-import { config as actionConfig } from './config/actions.config';
-import { WebSocketHandler } from './handlers/Handler';
 import { applicationContainer } from './inversify.config';
-import { TYPES } from './types';
-import { IConnectionRepository } from './connection/IConnectionRepository';
 import { v4 as uuidV4 } from 'uuid';
-import { IUserRepository } from './user/IUserRepository';
-import { User } from './user/User';
+import { getAPIConfig } from './application/config/api.config';
+import { IConnectionRepository } from './packages/connection/domain/repository/IConnectionRepository';
+import { TYPES as ConnectionTYPES} from './packages/connection/types';
+import { TYPES as UserTYPES } from './packages/user/types';
+import { Connection } from './packages/connection/domain/entity/Connection';
+import { IUserRepository } from './packages/user/domain/repository/IUserRepository';
+import { User } from './packages/user/domain/entity/User';
 
 const wss = new WebSocketServer({ port: 3000 });
 
@@ -24,18 +25,15 @@ const isWebSocketAction = (something: any): something is WebSocketAction => {
     typeof something.payload === 'string';
 };
 
-const handlers = new Map<string, WebSocketHandler>();
-for (const [action, handlerClass] of Object.entries(actionConfig)) {
-  handlers.set(action, applicationContainer.resolve(handlerClass).handler);
-}
+const APIConfig = getAPIConfig(applicationContainer);
 
 let userCount = 1;
 wss.on('connection', function connection(ws: WebSocket) {
-  const connectionRepo = applicationContainer.get<IConnectionRepository>(TYPES.IConnectionRepository);
-  const connectionUuid = connectionRepo.addConnection(ws);
+  const connectionRepo = applicationContainer.get<IConnectionRepository>(ConnectionTYPES.IConnectionRepository);
+  const connectionUuid = connectionRepo.addConnection(new Connection({ websocket: ws }));
 
   // @TODO should have registered and logged in / gotten token before connecting to the websocket server
-  const userRepo = applicationContainer.get<IUserRepository>(TYPES.IUserRepository);
+  const userRepo = applicationContainer.get<IUserRepository>(UserTYPES.IUserRepository);
   const connectedUser = new User({
     username: `User ${userCount++}`,
     activeConnections: new Set()
@@ -58,7 +56,7 @@ wss.on('connection', function connection(ws: WebSocket) {
         throw Error('Not an action');
       }
 
-      const handler = handlers.get(messageObject.action);
+      const handler = APIConfig.websocket[messageObject.action];
       if (handler !== undefined) {
         handler({
           uuid: uuidV4(),
