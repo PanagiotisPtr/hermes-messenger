@@ -1,19 +1,21 @@
 import { Container } from 'inversify';
-import { MemoryDB } from './common/infra/MemoryDB';
-import { ConnectionRepository } from './connection/ConnectionRepository';
-import { ConnectionStorage } from './connection/ConnectionStorage';
-import { IConnectionRepository } from './connection/IConnectionRepository';
-import { IMessageRepository } from './message/IMessageRepository';
-import { MessageMemoryRepository } from './message/MessageMemoryRepository';
-import { TYPES } from './types';
-import { IUserRepository } from './user/IUserRepository';
-import { UserMemoryRepository } from './user/UserMemoryRepository';
+import { IConnectionRepository } from './connection/domain/repository/IConnectionRepository';
+import { ConnectionMemoryRepository, ConnectionStorage } from './connection/infra/repository/ConnectionMemoryRepository';
+import { TYPES as ConnectionTYPES } from './connection/types';
+import { IMessageRepository } from './message/domain/repository/IMessageRepository';
+import { MemoryDB } from './packages/common/infra/MemoryDB';
+import { TYPES as CommonTYPES } from './packages/common/types';
+import { IUserRepository } from './user/domain/repository/IUserRepository';
+import { TYPES as UserTYPES } from './user/types';
+import { TYPES as MessageTYPES } from './message/types';
+import { UserMemoryRepository } from './user/infra/repository/UserMemoryRepository';
+import { MessageMemoryRepository } from './message/infra/repository/MessageMemoryRepository';
 
 const applicationContainer = new Container();
-applicationContainer.bind<MemoryDB>(TYPES.MemoryDB).to(MemoryDB).inSingletonScope();
-applicationContainer.bind<ConnectionStorage>(TYPES.ConnectionStorage).toConstantValue(new Map());
-applicationContainer.bind<IConnectionRepository>(TYPES.IConnectionRepository).to(ConnectionRepository);
-applicationContainer.bind<IUserRepository>(TYPES.IUserRepository).to(UserMemoryRepository);
-applicationContainer.bind<IMessageRepository>(TYPES.IMessageRepository).to(MessageMemoryRepository);
+applicationContainer.bind<MemoryDB>(CommonTYPES.MemoryDB).to(MemoryDB).inSingletonScope();
+applicationContainer.bind<ConnectionStorage>(ConnectionTYPES.ConnectionStorage).toConstantValue(new Map());
+applicationContainer.bind<IConnectionRepository>(ConnectionTYPES.IConnectionRepository).to(ConnectionMemoryRepository);
+applicationContainer.bind<IUserRepository>(UserTYPES.IUserRepository).to(UserMemoryRepository);
+applicationContainer.bind<IMessageRepository>(MessageTYPES.IMessageRepository).to(MessageMemoryRepository);
 
 export { applicationContainer };

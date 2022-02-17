@@ -1,10 +1,12 @@
 import { inject, injectable } from 'inversify';
 import { v4 as uuidV4 } from 'uuid';
 import WebSocket from 'ws';
-import Repository from '../../../common/repository/Repository';
+import Repository from '../../../packages/common/repository/Repository';
 import { Connection } from '../../domain/entity/Connection';
 import { IConnectionRepository } from '../../domain/repository/IConnectionRepository';
 import { TYPES } from '../../types';
+
+export type ConnectionStorage = Map<string, Connection>;
 
 @injectable()
 export class ConnectionMemoryRepository extends Repository implements IConnectionRepository {

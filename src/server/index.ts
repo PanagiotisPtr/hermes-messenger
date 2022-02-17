@@ -3,12 +3,12 @@ import WebSocket, { RawData, WebSocketServer } from 'ws';
 import { applicationContainer } from './inversify.config';
 import { v4 as uuidV4 } from 'uuid';
 import { getAPIConfig } from './application/config/api.config';
-import { IConnectionRepository } from './packages/connection/domain/repository/IConnectionRepository';
-import { TYPES as ConnectionTYPES} from './packages/connection/types';
-import { TYPES as UserTYPES } from './packages/user/types';
-import { Connection } from './packages/connection/domain/entity/Connection';
-import { IUserRepository } from './packages/user/domain/repository/IUserRepository';
-import { User } from './packages/user/domain/entity/User';
+import { IConnectionRepository } from './connection/domain/repository/IConnectionRepository';
+import { TYPES as ConnectionTYPES} from './connection/types';
+import { TYPES as UserTYPES } from './user/types';
+import { Connection } from './connection/domain/entity/Connection';
+import { IUserRepository } from './user/domain/repository/IUserRepository';
+import { User } from './user/domain/entity/User';
 
 const wss = new WebSocketServer({ port: 3000 });
 
