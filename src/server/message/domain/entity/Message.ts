@@ -1,4 +1,4 @@
-import { Entity } from '../../../common/entity/Entity';
+import { Entity } from '../../../lib/common/entity/Entity';
 
 type UserUuid = string;
 
