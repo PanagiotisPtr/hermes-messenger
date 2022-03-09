@@ -1,4 +1,4 @@
-import { Entity } from '../../../packages/common/entity/Entity';
+import { Entity } from '../../../lib/common/entity/Entity';
 
 type ConnectionUuid = string;
 

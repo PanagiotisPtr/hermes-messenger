@@ -1,8 +1,8 @@
 import { Container } from 'inversify';
-import { Controller } from '../../packages/common/controller/Controller';
-import { HttpHandler } from '../../packages/common/handler/http/HttpHandler';
-import { WebSocketHandler } from '../../packages/common/handler/websocket/WebSocketHandler';
-import { MessageController } from '../../packages/message/application/controller/websocket/MessageController';
+import { Controller } from '../../lib/common/controller/Controller';
+import { HttpHandler } from '../../lib/common/handler/http/HttpHandler';
+import { WebSocketHandler } from '../../lib/common/handler/websocket/WebSocketHandler';
+import { MessageController } from '../../message/application/controller/websocket/MessageController';
 
 type Constructor<T> = new (...args: any) => T;
 

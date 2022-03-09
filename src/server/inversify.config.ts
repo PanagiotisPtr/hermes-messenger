@@ -3,8 +3,8 @@ import { IConnectionRepository } from './connection/domain/repository/IConnectio
 import { ConnectionMemoryRepository, ConnectionStorage } from './connection/infra/repository/ConnectionMemoryRepository';
 import { TYPES as ConnectionTYPES } from './connection/types';
 import { IMessageRepository } from './message/domain/repository/IMessageRepository';
-import { MemoryDB } from './packages/common/infra/MemoryDB';
-import { TYPES as CommonTYPES } from './packages/common/types';
+import { MemoryDB } from './lib/common/infra/MemoryDB';
+import { TYPES as CommonTYPES } from './lib/common/types';
 import { IUserRepository } from './user/domain/repository/IUserRepository';
 import { TYPES as UserTYPES } from './user/types';
 import { TYPES as MessageTYPES } from './message/types';

@@ -1,5 +1,5 @@
 import { WebSocket } from 'ws';
-import { Entity } from '../../../packages/common/entity/Entity';
+import { Entity } from '../../../lib/common/entity/Entity';
 
 interface ConnectionProps {
   websocket: WebSocket;
