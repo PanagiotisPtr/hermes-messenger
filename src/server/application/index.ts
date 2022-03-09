@@ -1,14 +1,14 @@
 import 'reflect-metadata';
 import WebSocket, { RawData, WebSocketServer } from 'ws';
-import { applicationContainer } from './inversify.config';
+import { applicationContainer } from './config/inversify.config';
 import { v4 as uuidV4 } from 'uuid';
-import { getAPIConfig } from './application/config/api.config';
-import { IConnectionRepository } from './connection/domain/repository/IConnectionRepository';
-import { TYPES as ConnectionTYPES} from './connection/types';
-import { TYPES as UserTYPES } from './user/types';
-import { Connection } from './connection/domain/entity/Connection';
-import { IUserRepository } from './user/domain/repository/IUserRepository';
-import { User } from './user/domain/entity/User';
+import { getAPIConfig } from './config/application.config';
+import { IConnectionRepository } from '../connection/domain/repository/IConnectionRepository';
+import { TYPES as ConnectionTYPES} from '../connection/types';
+import { TYPES as UserTYPES } from '../user/types';
+import { Connection } from '../connection/domain/entity/Connection';
+import { IUserRepository } from '../user/domain/repository/IUserRepository';
+import { User } from '../user/domain/entity/User';
 
 const wss = new WebSocketServer({ port: 3000 });
 
