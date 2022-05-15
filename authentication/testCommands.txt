@@ -1,0 +1,27 @@
+grpcurl --plaintext -d @ localhost:8080 Authentication.Register <<EOM
+{
+  "Email": "user@domain.com",
+  "Password": "somePassword!"
+}
+EOM
+
+grpcurl --plaintext -d @ localhost:8080 Authentication.Authenticate <<EOM
+{
+  "Email": "user@domain.com",
+  "Password": "somePassword!"
+}
+EOM
+
+// Public key will contain "\n" characters - they must be replaced with newlines
+grpcurl --plaintext -d @ localhost:8080 Authentication.GetPublicKey <<EOM
+{
+}
+EOM
+
+grpcurl --plaintext -d @ localhost:8080 Authentication.Refresh <<EOM
+{
+  "RefreshToken": "The refresh token from the Authenticate response"
+}
+EOM
+
+//validate access token with public key on https://jwt.io

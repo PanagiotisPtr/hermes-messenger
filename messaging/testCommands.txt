@@ -1,0 +1,38 @@
+grpcurl --plaintext -d @ localhost:9090 Messaging.SendMessage <<EOM
+{
+  "From": "eda746bf-44c1-4447-b281-8bbcbea15a05",
+  "To": "dbc8ef2e-b365-42ad-ae8c-4c9818ff80a4",
+  "Content": "Hello"
+}
+EOM
+
+grpcurl --plaintext -d @ localhost:9090 Messaging.SendMessage <<EOM
+{
+  "From": "dbc8ef2e-b365-42ad-ae8c-4c9818ff80a4",
+  "To": "eda746bf-44c1-4447-b281-8bbcbea15a05",
+  "Content": "Hi! How are you?"
+}
+EOM
+
+grpcurl --plaintext -d @ localhost:9090 Messaging.SendMessage <<EOM
+{
+  "From": "eda746bf-44c1-4447-b281-8bbcbea15a05",
+  "To": "dbc8ef2e-b365-42ad-ae8c-4c9818ff80a4",
+  "Content": "I'm good thanks. Bye!"
+}
+EOM
+
+grpcurl --plaintext -d @ localhost:9090 Messaging.SendMessage <<EOM
+{
+  "From": "dbc8ef2e-b365-42ad-ae8c-4c9818ff80a4",
+  "To": "eda746bf-44c1-4447-b281-8bbcbea15a05",
+  "Content": "Bye!"
+}
+EOM
+
+grpcurl --plaintext -d @ localhost:9090 Messaging.GetMessagesBetweenUsers <<EOM
+{
+  "From": "dbc8ef2e-b365-42ad-ae8c-4c9818ff80a4",
+  "To": "eda746bf-44c1-4447-b281-8bbcbea15a05"
+}
+EOM

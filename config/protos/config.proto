@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+option go_package = "panagiotisptr/user/protos";
+
+service Config {
+  rpc SetParam(SetParamRequest) returns (SetParamResponse);
+  rpc UnsetParam(UnsetParamRequest) returns (UnsetParamResponse);
+  rpc GetParam(GetParamRequest) returns (GetParamResponse);
+}
+
+message SetParamRequest {
+  string ParamName = 1;
+  string ParamValue = 2;
+}
+
+message SetParamResponse {
+  bool Success = 1;
+}
+
+message UnsetParamRequest {
+  string ParamName = 1;
+}
+
+message UnsetParamResponse {
+  bool Success = 1;
+}
+
+message GetParamRequest {
+  string ParamName = 1;
+}
+
+message GetParamResponse {
+  string ParamName = 1;
+  string ParamValue = 2;
+}

@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+option go_package = "panagiotisptr/friends/protos";
+
+service Friends {
+  rpc AddFriend(AddFriendRequest) returns (AddFriendResponse);
+  rpc RemoveFriend(RemoveFriendRequest) returns (RemoveFriendResponse);
+  rpc GetFriends(GetFriendsRequest) returns (GetFriendsResponse);
+}
+
+message AddFriendRequest {
+  string UserUuid = 1;
+  string FriendUuid = 2;
+}
+
+message AddFriendResponse {
+  bool Sent = 1;
+}
+
+message RemoveFriendRequest {
+  string UserUuid = 1;
+  string FriendUuid = 2;
+}
+
+message RemoveFriendResponse {
+  bool Success = 1;
+}
+
+message Friend {
+  string UserUuid = 1;
+  string Status = 2;
+}
+
+message GetFriendsRequest {
+  string UserUuid = 1;
+}
+
+message GetFriendsResponse {
+  repeated Friend Friends = 1;
+}

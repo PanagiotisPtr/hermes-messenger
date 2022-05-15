@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="stylesheet" href="/style.css">
+  <script>
+    let socket = new WebSocket("{{ .WebSocketUrl}}");
+    console.log("Connecting to server");
+
+    socket.onopen = () => {
+        console.log("Connected to server");
+        socket.send("Hello")
+    };
+
+    socket.onclose = event => {
+        console.log("Socket connection closed: ", event);
+        socket.send("Client connection closed")
+    };
+
+    socket.onerror = error => {
+        console.log("Socket Error: ", error);
+    };
+  </script>
+</head>
+<body>
+  <h1>Chat {{ .UserUuid }}</h1>
+  {{ range $key, $value := .Messages }}
+    <span>{{ $value.From }}:</span> {{ $value.Content }}
+    <br>
+  {{ else }}
+    <span>You haven't sent any messages to that user. Say 'Hello'! :)</span>
+  {{ end }}
+
+  <form action="/message/{{ .UserUuid }}">
+    <input type="text" name="content">
+    <button>Send</button>
+  </form>
+</body>
+</html>

@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+option go_package = "panagiotisptr/messaging/protos";
+
+service Authentication {
+  rpc Register(RegisterRequest) returns (RegisterResponse);
+  rpc Authenticate(AuthenticateRequest) returns (AuthenticateResponse);
+  rpc Refresh(RefreshRequest) returns (RefreshResponse);
+  rpc GetPublicKey(GetPublicKeyRequest) returns (GetPublicKeyResponse);
+}
+
+message RegisterRequest {
+  string Email = 1;
+  string Password = 2;
+}
+
+message RegisterResponse {
+  bool success = 1;
+}
+
+message AuthenticateRequest {
+  string Email = 1;
+  string Password = 2;
+}
+
+message AuthenticateResponse {
+  string RefreshToken = 1;
+  string AccessToken = 2;
+}
+
+message RefreshRequest {
+  string RefreshToken = 1;
+}
+
+message RefreshResponse {
+  string AccessToken = 1;
+}
+
+message GetPublicKeyRequest {}
+
+message GetPublicKeyResponse {
+  string PublicKey = 1;
+}
