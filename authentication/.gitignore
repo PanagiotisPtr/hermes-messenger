@@ -1,2 +1,2 @@
 protos/*.go
-authentication
+.vscode
