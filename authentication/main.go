@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
+	"hermes-messenger/authentication/protos"
+	"hermes-messenger/authentication/server"
 	"log"
 	"net"
 	"os"
-	"panagiotisptr/authentication/protos"
-	"panagiotisptr/authentication/server"
 	"strconv"
 
 	"google.golang.org/grpc"

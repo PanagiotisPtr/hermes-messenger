@@ -1,11 +1,11 @@
 package main
 
 import (
+	"hermes-messenger/user/protos"
+	"hermes-messenger/user/server"
 	"log"
 	"net"
 	"os"
-	"panagiotisptr/user/protos"
-	"panagiotisptr/user/server"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"

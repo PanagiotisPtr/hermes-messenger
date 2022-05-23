@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "panagiotisptr/user/protos";
+option go_package = "hermes-messenger/user/protos";
 
 service User {
   rpc RegisterUser(RegisterUserRequest) returns (RegisterUserResponse);

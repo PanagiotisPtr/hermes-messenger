@@ -6,8 +6,8 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
+	"hermes-messenger/chat-app/protos"
 	"net/http"
-	"panagiotisptr/chat-app/protos"
 
 	"github.com/golang-jwt/jwt"
 )

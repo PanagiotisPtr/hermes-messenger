@@ -2,9 +2,9 @@ package server
 
 import (
 	"context"
+	"hermes-messenger/user/protos"
+	"hermes-messenger/user/server/user"
 	"log"
-	"panagiotisptr/user/protos"
-	"panagiotisptr/user/server/user"
 
 	"github.com/google/uuid"
 )

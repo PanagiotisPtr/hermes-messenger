@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
+	"hermes-messenger/messaging/protos"
+	"hermes-messenger/messaging/server"
 	"log"
 	"net"
 	"os"
-	"panagiotisptr/messaging/protos"
-	"panagiotisptr/messaging/server"
 
 	"github.com/google/uuid"
 	"google.golang.org/grpc"

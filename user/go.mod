@@ -1,4 +1,4 @@
-module panagiotisptr/user
+module hermes-messenger/user
 
 go 1.18
 

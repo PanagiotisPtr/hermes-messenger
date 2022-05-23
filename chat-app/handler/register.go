@@ -3,8 +3,8 @@ package handler
 import (
 	"context"
 	"fmt"
+	"hermes-messenger/chat-app/protos"
 	"net/http"
-	"panagiotisptr/chat-app/protos"
 )
 
 func GetRegisterHandler(authenticationClient protos.AuthenticationClient) httpHandler {

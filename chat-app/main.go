@@ -2,10 +2,10 @@ package main
 
 import (
 	"fmt"
+	"hermes-messenger/chat-app/handler"
+	"hermes-messenger/chat-app/protos"
 	"log"
 	"net/http"
-	"panagiotisptr/chat-app/handler"
-	"panagiotisptr/chat-app/protos"
 
 	"github.com/gorilla/websocket"
 	"google.golang.org/grpc"

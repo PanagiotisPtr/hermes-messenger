@@ -1,4 +1,4 @@
-module panagiotisptr/chat-app
+module hermes-messenger/chat-app
 
 go 1.18
 

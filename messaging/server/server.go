@@ -2,9 +2,9 @@ package server
 
 import (
 	"context"
+	"hermes-messenger/messaging/protos"
+	"hermes-messenger/messaging/server/messaging"
 	"log"
-	"panagiotisptr/messaging/protos"
-	"panagiotisptr/messaging/server/messaging"
 )
 
 type MessagingServer struct {

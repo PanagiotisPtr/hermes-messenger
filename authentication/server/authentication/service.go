@@ -5,10 +5,10 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
+	"hermes-messenger/authentication/server/secret"
+	"hermes-messenger/authentication/server/token"
+	"hermes-messenger/authentication/server/user"
 	"log"
-	"panagiotisptr/authentication/server/secret"
-	"panagiotisptr/authentication/server/token"
-	"panagiotisptr/authentication/server/user"
 	"time"
 
 	"github.com/google/uuid"

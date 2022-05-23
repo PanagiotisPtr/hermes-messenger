@@ -2,9 +2,9 @@ package server
 
 import (
 	"context"
+	"hermes-messenger/authentication/protos"
+	"hermes-messenger/authentication/server/authentication"
 	"log"
-	"panagiotisptr/authentication/protos"
-	"panagiotisptr/authentication/server/authentication"
 )
 
 type AuthenticationServer struct {

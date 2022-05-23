@@ -2,8 +2,8 @@ package connection
 
 import (
 	"fmt"
+	"hermes-messenger/friends/server/connection/status"
 	"log"
-	"panagiotisptr/friends/server/connection/status"
 
 	"github.com/google/uuid"
 )

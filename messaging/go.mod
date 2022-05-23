@@ -1,4 +1,4 @@
-module panagiotisptr/messaging
+module hermes-messenger/messaging
 
 go 1.18
 

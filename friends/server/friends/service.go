@@ -2,9 +2,9 @@ package friends
 
 import (
 	"fmt"
+	"hermes-messenger/friends/server/connection"
+	"hermes-messenger/friends/server/connection/status"
 	"log"
-	"panagiotisptr/friends/server/connection"
-	"panagiotisptr/friends/server/connection/status"
 
 	"github.com/google/uuid"
 )

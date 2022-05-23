@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "panagiotisptr/friends/protos";
+option go_package = "hermes-messenger/friends/protos";
 
 service Friends {
   rpc AddFriend(AddFriendRequest) returns (AddFriendResponse);

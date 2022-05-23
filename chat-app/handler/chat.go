@@ -3,10 +3,10 @@ package handler
 import (
 	"context"
 	"fmt"
+	"hermes-messenger/chat-app/middleware"
+	"hermes-messenger/chat-app/protos"
 	"html/template"
 	"net/http"
-	"panagiotisptr/chat-app/middleware"
-	"panagiotisptr/chat-app/protos"
 	"strings"
 )
 

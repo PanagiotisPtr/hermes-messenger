@@ -1,4 +1,4 @@
-module panagiotisptr/authentication
+module hermes-messenger/authentication
 
 go 1.18
 

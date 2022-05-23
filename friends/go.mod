@@ -1,4 +1,4 @@
-module panagiotisptr/friends
+module hermes-messenger/friends
 
 go 1.18
 

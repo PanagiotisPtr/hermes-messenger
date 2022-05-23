@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "panagiotisptr/messaging/protos";
+option go_package = "hermes-messenger/messaging/protos";
 
 service Messaging {
   rpc SendMessage(SendMessageRequest) returns (SendMessageResponse);
