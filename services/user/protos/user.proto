@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+option go_package = "github.com/panagiotisptr/hermes-messenger/user/protos";
+
+service User {
+  rpc RegisterUser(RegisterUserRequest) returns (RegisterUserResponse);
+  rpc GetUser(GetUserRequest) returns (GetUserResponse);
+}
+
+message UserEntity {
+  string Uuid = 1;
+  string Email = 2;
+}
+
+message RegisterUserRequest {
+  string Uuid = 1;
+  string Email = 2;
+}
+
+message RegisterUserResponse {
+  bool Success = 1;
+}
+
+message GetUserRequest {
+  string Uuid = 1;
+}
+
+message GetUserResponse {
+  UserEntity User = 1;
+}
