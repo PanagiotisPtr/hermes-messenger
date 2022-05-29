@@ -56,6 +56,7 @@ require (
 	github.com/mitchellh/mapstructure v1.4.1 // indirect
 	github.com/mitchellh/reflectwalk v1.0.1 // indirect
 	github.com/panagiotisptr/hermes-messenger/libs/service v0.0.0 // indirect
+	github.com/panagiotisptr/hermes-messenger/libs/utils v0.0.0 // indirect
 	github.com/panagiotisptr/hermes-messenger/protos v0.0.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
@@ -78,5 +79,7 @@ require (
 )
 
 replace github.com/panagiotisptr/hermes-messenger/libs/service v0.0.0 => ../../libs/service
+
+replace github.com/panagiotisptr/hermes-messenger/libs/utils v0.0.0 => ../../libs/utils
 
 replace github.com/panagiotisptr/hermes-messenger/protos v0.0.0 => ../../protos

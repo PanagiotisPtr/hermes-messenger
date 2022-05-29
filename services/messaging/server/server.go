@@ -4,8 +4,8 @@ import (
 	"context"
 	"log"
 
-	"github.com/panagiotisptr/hermes-messenger/messaging/protos"
 	"github.com/panagiotisptr/hermes-messenger/messaging/server/messaging"
+	"github.com/panagiotisptr/hermes-messenger/protos"
 )
 
 type MessagingServer struct {

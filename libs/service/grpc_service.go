@@ -53,10 +53,10 @@ func (s *GRPCService) Bootstrap(config GRPCServiceConfig, setup SetupFunc) error
 	}
 	s.connectService = connectService
 
-	logger := log.New(os.Stdout, config.ServiceName+"-logs", log.Lshortfile)
+	logger := log.New(os.Stdout, config.ServiceName+"-logs: ", log.Lshortfile)
 	registration := &api.AgentServiceRegistration{
-		ID:      "authentication",
-		Name:    "authentication",
+		ID:      config.ServiceName,
+		Name:    config.ServiceName,
 		Port:    config.ListenPort,
 		Address: config.HostName,
 		Check: &api.AgentServiceCheck{

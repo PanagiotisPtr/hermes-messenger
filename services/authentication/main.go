@@ -4,10 +4,9 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"os"
-	"strconv"
 
 	"github.com/panagiotisptr/hermes-messenger/libs/service"
+	"github.com/panagiotisptr/hermes-messenger/libs/utils"
 	"github.com/panagiotisptr/hermes-messenger/protos"
 	"github.com/panagiotisptr/hermes-messenger/services/authentication/server"
 
@@ -33,27 +32,10 @@ func getIpAddress() (string, error) {
 }
 
 func main() {
-	listenPort := 80
-	listenPortEnvVariable, foundListenPortEnvVariable := os.LookupEnv("LISTEN_PORT")
-	if foundListenPortEnvVariable {
-		lp, err := strconv.Atoi(listenPortEnvVariable)
-		if err != nil {
-			panic(err)
-		}
-		listenPort = lp
-	}
+	listenPort := utils.GetEnvVariableInt("LISTEN_PORT", 80)
+	healthCheckPort := utils.GetEnvVariableInt("HEALTH_CHECK_PORT", 12345)
 
-	healthCheckPort := 12345
-	healthCheckPortEnvVariable, foundHealthCheckPortEnvVariable := os.LookupEnv("HEALTH_CHECK_PORT")
-	if foundHealthCheckPortEnvVariable {
-		hcp, err := strconv.Atoi(healthCheckPortEnvVariable)
-		if err != nil {
-			panic(err)
-		}
-		healthCheckPort = hcp
-	}
-
-	ipAddress, err := getIpAddress()
+	ipAddress, err := utils.GetMachineIpAddress()
 	if err != nil {
 		panic(err)
 	}

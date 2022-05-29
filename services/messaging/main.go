@@ -1,56 +1,49 @@
 package main
 
 import (
-	"fmt"
 	"log"
-	"net"
-	"os"
 
-	"github.com/panagiotisptr/hermes-messenger/messaging/protos"
+	"github.com/panagiotisptr/hermes-messenger/libs/service"
+	"github.com/panagiotisptr/hermes-messenger/libs/utils"
 	"github.com/panagiotisptr/hermes-messenger/messaging/server"
+	"github.com/panagiotisptr/hermes-messenger/protos"
 
-	"github.com/google/uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
 
 func main() {
-	uuid1 := uuid.New()
-	uuid2 := uuid.New()
+	listenPort := utils.GetEnvVariableInt("LISTEN_PORT", 80)
+	healthCheckPort := utils.GetEnvVariableInt("HEALTH_CHECK_PORT", 12345)
 
-	uuid3bytes := make([]byte, 16)
-	for index, _ := range uuid1 {
-		uuid3bytes[index] = uuid1[index] ^ uuid2[index]
-	}
-	uuid3, _ := uuid.FromBytes(uuid3bytes)
-
-	uuid4bytes := make([]byte, 16)
-	for index, _ := range uuid2 {
-		uuid4bytes[index] = uuid2[index] ^ uuid1[index]
-	}
-	uuid4, _ := uuid.FromBytes(uuid3bytes)
-
-	fmt.Println(uuid1.String())
-	fmt.Println(uuid2.String())
-	fmt.Println(uuid3.String())
-	fmt.Println(uuid4.String())
-
-	logger := log.New(os.Stdout, "messaging-service", log.Lshortfile)
-
-	gs := grpc.NewServer()
-	cs := server.NewMessagingServer(logger)
-
-	protos.RegisterMessagingServer(gs, cs)
-
-	reflection.Register(gs)
-
-	list, err := net.Listen("tcp", ":9090")
+	ipAddress, err := utils.GetMachineIpAddress()
 	if err != nil {
-		logger.Fatalf("Unable to listen. Error: %v", err)
-		os.Exit(1)
-	} else {
-		logger.Println("Listening on port :9090")
+		panic(err)
 	}
 
-	gs.Serve(list)
+	grpcService := service.NewGRPCService()
+	err = grpcService.Bootstrap(service.GRPCServiceConfig{
+		ServiceName:     "messaging",
+		HostName:        ipAddress,
+		ListenPort:      listenPort,
+		HealthCheckPort: healthCheckPort,
+	}, func(gs *grpc.Server, logger *log.Logger) error {
+		cs := server.NewMessagingServer(logger)
+		if err != nil {
+			return err
+		}
+		protos.RegisterMessagingServer(gs, cs)
+		reflection.Register(gs)
+
+		return nil
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	err = grpcService.Start()
+	if err != nil {
+		panic(err)
+	}
+	defer grpcService.Stop()
 }
