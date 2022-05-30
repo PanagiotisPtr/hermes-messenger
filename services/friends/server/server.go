@@ -4,8 +4,8 @@ import (
 	"context"
 	"log"
 
-	"github.com/panagiotisptr/hermes-messenger/friends/protos"
 	"github.com/panagiotisptr/hermes-messenger/friends/server/friends"
+	"github.com/panagiotisptr/hermes-messenger/protos"
 
 	"github.com/google/uuid"
 )

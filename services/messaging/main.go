@@ -9,7 +9,6 @@ import (
 	"github.com/panagiotisptr/hermes-messenger/protos"
 
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
 )
 
 func main() {
@@ -27,13 +26,13 @@ func main() {
 		HostName:        ipAddress,
 		ListenPort:      listenPort,
 		HealthCheckPort: healthCheckPort,
+		GRPCReflection:  true,
 	}, func(gs *grpc.Server, logger *log.Logger) error {
 		cs := server.NewMessagingServer(logger)
 		if err != nil {
 			return err
 		}
 		protos.RegisterMessagingServer(gs, cs)
-		reflection.Register(gs)
 
 		return nil
 	})

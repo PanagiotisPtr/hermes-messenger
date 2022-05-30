@@ -2,36 +2,47 @@ package main
 
 import (
 	"log"
-	"net"
-	"os"
 
-	"github.com/panagiotisptr/hermes-messenger/user/protos"
+	"github.com/panagiotisptr/hermes-messenger/libs/service"
+	"github.com/panagiotisptr/hermes-messenger/libs/utils"
+	"github.com/panagiotisptr/hermes-messenger/protos"
 	"github.com/panagiotisptr/hermes-messenger/user/server"
 
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
 )
 
 func main() {
-	logger := log.New(os.Stdout, "messaging-service", log.Lshortfile)
+	listenPort := utils.GetEnvVariableInt("LISTEN_PORT", 80)
+	healthCheckPort := utils.GetEnvVariableInt("HEALTH_CHECK_PORT", 12345)
 
-	gs := grpc.NewServer()
-	cs, err := server.NewUserService(logger)
+	ipAddress, err := utils.GetMachineIpAddress()
 	if err != nil {
 		panic(err)
 	}
 
-	protos.RegisterUserServer(gs, cs)
+	grpcService := service.NewGRPCService()
+	err = grpcService.Bootstrap(service.GRPCServiceConfig{
+		ServiceName:     "user",
+		HostName:        ipAddress,
+		ListenPort:      listenPort,
+		HealthCheckPort: healthCheckPort,
+		GRPCReflection:  true,
+	}, func(gs *grpc.Server, logger *log.Logger) error {
+		cs, err := server.NewUserServer(logger)
+		if err != nil {
+			return err
+		}
+		protos.RegisterUserServer(gs, cs)
 
-	reflection.Register(gs)
-
-	list, err := net.Listen("tcp", ":6060")
+		return nil
+	})
 	if err != nil {
-		logger.Fatalf("Unable to listen. Error: %v", err)
-		os.Exit(1)
-	} else {
-		logger.Println("Listening on port :6060")
+		panic(err)
 	}
 
-	gs.Serve(list)
+	err = grpcService.Start()
+	if err != nil {
+		panic(err)
+	}
+	defer grpcService.Stop()
 }

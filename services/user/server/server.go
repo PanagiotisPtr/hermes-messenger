@@ -4,7 +4,7 @@ import (
 	"context"
 	"log"
 
-	"github.com/panagiotisptr/hermes-messenger/user/protos"
+	"github.com/panagiotisptr/hermes-messenger/protos"
 	"github.com/panagiotisptr/hermes-messenger/user/server/user"
 
 	"github.com/google/uuid"
@@ -16,7 +16,7 @@ type UserServer struct {
 	protos.UnimplementedUserServer
 }
 
-func NewUserService(logger *log.Logger) (*UserServer, error) {
+func NewUserServer(logger *log.Logger) (*UserServer, error) {
 	service := user.NewService(logger)
 
 	return &UserServer{

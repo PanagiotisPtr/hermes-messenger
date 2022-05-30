@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/consul/api"
 	"github.com/hashicorp/consul/connect"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 type GRPCServiceConfig struct {
@@ -18,6 +19,7 @@ type GRPCServiceConfig struct {
 	HostName        string
 	ListenPort      int
 	HealthCheckPort int
+	GRPCReflection  bool
 }
 
 type GRPCService struct {
@@ -53,7 +55,7 @@ func (s *GRPCService) Bootstrap(config GRPCServiceConfig, setup SetupFunc) error
 	}
 	s.connectService = connectService
 
-	logger := log.New(os.Stdout, config.ServiceName+"-logs: ", log.Lshortfile)
+	logger := log.New(os.Stdout, "["+config.ServiceName+"-logs] ", log.Lshortfile)
 	registration := &api.AgentServiceRegistration{
 		ID:      config.ServiceName,
 		Name:    config.ServiceName,
@@ -79,6 +81,10 @@ func (s *GRPCService) Bootstrap(config GRPCServiceConfig, setup SetupFunc) error
 		return err
 	}
 	s.grpcServer = gs
+
+	if config.GRPCReflection {
+		reflection.Register(gs)
+	}
 
 	listenAddress := fmt.Sprintf(":%d", config.ListenPort)
 	healthCheckAddress := fmt.Sprintf(":%d", config.HealthCheckPort)
