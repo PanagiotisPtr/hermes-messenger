@@ -1,48 +1,45 @@
 package main
 
 import (
+	"fmt"
 	"log"
+	"net"
+	"os"
 
-	"github.com/panagiotisptr/hermes-messenger/libs/service"
 	"github.com/panagiotisptr/hermes-messenger/libs/utils"
 	"github.com/panagiotisptr/hermes-messenger/protos"
 	"github.com/panagiotisptr/hermes-messenger/services/authentication/server"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 func main() {
 	listenPort := utils.GetEnvVariableInt("LISTEN_PORT", 80)
-	healthCheckPort := utils.GetEnvVariableInt("HEALTH_CHECK_PORT", 12345)
+	grpcReflection := utils.GetEnvVariableBool("GRPC_REFLECTION", false)
 
-	ipAddress, err := utils.GetMachineIpAddress()
+	logger := log.New(os.Stdout, "[authentication-logs] ", log.Lshortfile)
+	gs := grpc.NewServer()
+	cs, err := server.NewAuthenticationServer(logger)
+	if err != nil {
+		panic(err)
+	}
+	protos.RegisterAuthenticationServer(gs, cs)
 	if err != nil {
 		panic(err)
 	}
 
-	grpcService := service.NewGRPCService()
-	err = grpcService.Bootstrap(service.GRPCServiceConfig{
-		ServiceName:     "authentication",
-		HostName:        ipAddress,
-		ListenPort:      listenPort,
-		HealthCheckPort: healthCheckPort,
-		GRPCReflection:  true,
-	}, func(gs *grpc.Server, logger *log.Logger) error {
-		cs, err := server.NewAuthenticationServer(logger)
-		if err != nil {
-			return err
-		}
-		protos.RegisterAuthenticationServer(gs, cs)
-
-		return nil
-	})
-	if err != nil {
-		panic(err)
+	if grpcReflection {
+		reflection.Register(gs)
 	}
 
-	err = grpcService.Start()
+	addr := fmt.Sprintf(":%d", listenPort)
+	list, err := net.Listen("tcp", addr)
 	if err != nil {
 		panic(err)
+	} else {
+		logger.Println("Listening on " + addr)
 	}
-	defer grpcService.Stop()
+
+	gs.Serve(list)
 }

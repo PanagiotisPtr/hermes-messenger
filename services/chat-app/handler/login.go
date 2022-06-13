@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/panagiotisptr/hermes-messenger/chat-app/protos"
+	"github.com/panagiotisptr/hermes-messenger/protos"
 )
 
 func GetLoginHandler(authenticationClient protos.AuthenticationClient) httpHandler {

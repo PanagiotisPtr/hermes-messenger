@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/panagiotisptr/hermes-messenger/chat-app/middleware"
-	"github.com/panagiotisptr/hermes-messenger/chat-app/protos"
+	"github.com/panagiotisptr/hermes-messenger/protos"
 )
 
 func GetChatHandler(

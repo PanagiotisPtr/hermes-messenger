@@ -8,9 +8,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/panagiotisptr/hermes-messenger/chat-app/protos"
-
 	"github.com/golang-jwt/jwt"
+	"github.com/panagiotisptr/hermes-messenger/protos"
 )
 
 func validateToken(

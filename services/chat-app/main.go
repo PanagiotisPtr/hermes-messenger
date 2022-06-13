@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/panagiotisptr/hermes-messenger/chat-app/handler"
-	"github.com/panagiotisptr/hermes-messenger/chat-app/protos"
+	"github.com/panagiotisptr/hermes-messenger/protos"
 
 	"github.com/gorilla/websocket"
 	"google.golang.org/grpc"

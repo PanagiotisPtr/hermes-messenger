@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/panagiotisptr/hermes-messenger/chat-app/protos"
+	"github.com/panagiotisptr/hermes-messenger/protos"
 )
 
 func GetRegisterHandler(authenticationClient protos.AuthenticationClient) httpHandler {

@@ -5,6 +5,7 @@ import (
 	"net"
 	"os"
 	"strconv"
+	"strings"
 )
 
 func GetMachineIpAddress() (string, error) {
@@ -41,6 +42,22 @@ func GetEnvVariableInt(name string, defaultValue int) int {
 			return defaultValue
 		}
 		return value
+	}
+
+	return defaultValue
+}
+
+func GetEnvVariableBool(name string, defaultValue bool) bool {
+	listenPortEnvVariable, foundListenPortEnvVariable := os.LookupEnv(name)
+	if foundListenPortEnvVariable {
+		lowerCased := strings.ToLower(listenPortEnvVariable)
+		if lowerCased == "true" {
+			return true
+		} else if lowerCased == "false" {
+			return false
+		} else {
+			return defaultValue
+		}
 	}
 
 	return defaultValue
