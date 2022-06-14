@@ -25,11 +25,12 @@ type Service struct {
 	userRepository      user.Repository
 }
 
-func NewService(logger *log.Logger) (*Service, error) {
-	tokenRepository := token.NewRepository(logger)
-	secretRepository := secret.NewMemoryRepository(logger)
-	userRepository := user.NewMemoryRepository(logger)
-
+func NewService(
+	logger *log.Logger,
+	tokenRepository token.Repository,
+	secretRepository secret.Repository,
+	userRepository user.Repository,
+) (*Service, error) {
 	refreshTokenKeyName := "refreshTokenKeyPair"
 	accessTokenKeyName := "accessTokenKeyPair"
 
@@ -57,7 +58,7 @@ func NewService(logger *log.Logger) (*Service, error) {
 		logger:              logger,
 		refreshTokenKeyName: refreshTokenKeyName,
 		accessTokenKeyName:  accessTokenKeyName,
-		tokenRepository:     *tokenRepository,
+		tokenRepository:     tokenRepository,
 		secretRepository:    secretRepository,
 		userRepository:      userRepository,
 	}, nil

@@ -14,12 +14,7 @@ type AuthenticationServer struct {
 	protos.UnimplementedAuthenticationServer
 }
 
-func NewAuthenticationServer(logger *log.Logger) (*AuthenticationServer, error) {
-	service, err := authentication.NewService(logger)
-	if err != nil {
-		return nil, err
-	}
-
+func NewAuthenticationServer(logger *log.Logger, service *authentication.Service) (*AuthenticationServer, error) {
 	return &AuthenticationServer{
 		logger:  logger,
 		service: service,

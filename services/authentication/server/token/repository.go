@@ -13,8 +13,8 @@ type Repository struct {
 	logger *log.Logger
 }
 
-func NewRepository(logger *log.Logger) *Repository {
-	return &Repository{
+func NewRepository(logger *log.Logger) Repository {
+	return Repository{
 		logger: logger,
 	}
 }

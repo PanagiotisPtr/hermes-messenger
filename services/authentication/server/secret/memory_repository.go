@@ -12,7 +12,7 @@ type MemoryRepository struct {
 	keyStore map[string]KeyPair
 }
 
-func NewMemoryRepository(logger *log.Logger) *MemoryRepository {
+func NewMemoryRepository(logger *log.Logger) Repository {
 	return &MemoryRepository{
 		logger:   logger,
 		keyStore: make(map[string]KeyPair),

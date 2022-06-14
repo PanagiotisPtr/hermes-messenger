@@ -10,7 +10,7 @@ type MemoryRepository struct {
 	users  map[string]User
 }
 
-func NewMemoryRepository(logger *log.Logger) *MemoryRepository {
+func NewMemoryRepository(logger *log.Logger) Repository {
 	return &MemoryRepository{
 		logger: logger,
 		users:  make(map[string]User),
