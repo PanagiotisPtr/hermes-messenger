@@ -4,15 +4,16 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"fmt"
-	"log"
+
+	"go.uber.org/zap"
 )
 
 type MemoryRepository struct {
-	logger   *log.Logger
+	logger   *zap.Logger
 	keyStore map[string]KeyPair
 }
 
-func NewMemoryRepository(logger *log.Logger) Repository {
+func ProvideMemorySecretRepository(logger *zap.Logger) Repository {
 	return &MemoryRepository{
 		logger:   logger,
 		keyStore: make(map[string]KeyPair),

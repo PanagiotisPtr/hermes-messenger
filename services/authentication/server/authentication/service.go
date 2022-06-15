@@ -5,19 +5,19 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/panagiotisptr/hermes-messenger/services/authentication/server/secret"
 	"github.com/panagiotisptr/hermes-messenger/services/authentication/server/token"
 	"github.com/panagiotisptr/hermes-messenger/services/authentication/server/user"
+	"go.uber.org/zap"
 
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type Service struct {
-	logger              *log.Logger
+	logger              *zap.Logger
 	refreshTokenKeyName string
 	accessTokenKeyName  string
 	tokenRepository     token.Repository
@@ -25,8 +25,8 @@ type Service struct {
 	userRepository      user.Repository
 }
 
-func NewService(
-	logger *log.Logger,
+func ProvideAuthenticationService(
+	logger *zap.Logger,
 	tokenRepository token.Repository,
 	secretRepository secret.Repository,
 	userRepository user.Repository,
@@ -94,7 +94,7 @@ func (s *Service) generateToken(
 		tokenKeyName,
 	)
 	if err != nil {
-		s.logger.Printf("[ERROR] Failed to get private key: %v", err)
+		s.logger.Sugar().Errorf("[ERROR] Failed to get private key: %v", err)
 		return "", fmt.Errorf("Error when generating token")
 	}
 	token, err := s.tokenRepository.SignTokenWithClaims(
@@ -149,7 +149,7 @@ func (s *Service) Refresh(refreshToken string) (string, error) {
 		s.refreshTokenKeyName,
 	)
 	if err != nil {
-		s.logger.Printf("[ERROR] Failed to get public key: %v", err)
+		s.logger.Sugar().Errorf("[ERROR] Failed to get public key: %v", err)
 		return "", fmt.Errorf("Error when generating token")
 	}
 	data, err := s.tokenRepository.ValidateToken(refreshToken, publicKey)

@@ -2,19 +2,19 @@ package server
 
 import (
 	"context"
-	"log"
 
 	"github.com/panagiotisptr/hermes-messenger/protos"
 	"github.com/panagiotisptr/hermes-messenger/services/authentication/server/authentication"
+	"go.uber.org/zap"
 )
 
 type AuthenticationServer struct {
-	logger  *log.Logger
+	logger  *zap.Logger
 	service *authentication.Service
 	protos.UnimplementedAuthenticationServer
 }
 
-func NewAuthenticationServer(logger *log.Logger, service *authentication.Service) (*AuthenticationServer, error) {
+func ProvideAuthenticationServer(logger *zap.Logger, service *authentication.Service) (*AuthenticationServer, error) {
 	return &AuthenticationServer{
 		logger:  logger,
 		service: service,

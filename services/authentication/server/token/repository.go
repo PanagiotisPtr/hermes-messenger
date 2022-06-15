@@ -3,17 +3,17 @@ package token
 import (
 	"crypto/rsa"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/golang-jwt/jwt"
+	"go.uber.org/zap"
 )
 
 type Repository struct {
-	logger *log.Logger
+	logger *zap.Logger
 }
 
-func NewRepository(logger *log.Logger) Repository {
+func ProvideTokenRepository(logger *zap.Logger) Repository {
 	return Repository{
 		logger: logger,
 	}

@@ -3,11 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"net"
-	"os"
 
-	"github.com/google/uuid"
 	"github.com/panagiotisptr/hermes-messenger/libs/utils"
 	"github.com/panagiotisptr/hermes-messenger/protos"
 	"github.com/panagiotisptr/hermes-messenger/services/authentication/server"
@@ -23,21 +20,13 @@ import (
 	"google.golang.org/grpc/reflection"
 )
 
+// The application config
 type Config struct {
 	ListenPort     int
 	GRPCReflection bool
 }
 
-func NewLogger() (*log.Logger, error) {
-	uuid, err := uuid.NewUUID()
-	if err != nil {
-		return nil, err
-	}
-	logger := log.New(os.Stdout, "[authentication]["+uuid.String()+"]", log.Lshortfile)
-
-	return logger, nil
-}
-
+// Provides the application config
 func ProvideConfig() *Config {
 	listenPort := utils.GetEnvVariableInt("LISTEN_PORT", 80)
 	grpcReflection := utils.GetEnvVariableBool("GRPC_REFLECTION", false)
@@ -48,10 +37,10 @@ func ProvideConfig() *Config {
 	}
 }
 
+// Provides the GRPC server instance
 func ProvideGRPCServer(
 	as *server.AuthenticationServer,
 	config *Config,
-	logger *log.Logger,
 ) (*grpc.Server, error) {
 	gs := grpc.NewServer()
 	protos.RegisterAuthenticationServer(gs, as)
@@ -63,17 +52,18 @@ func ProvideGRPCServer(
 	return gs, nil
 }
 
-func Bootstrap(lc fx.Lifecycle, gs *grpc.Server, config *Config, slogger *zap.SugaredLogger) {
-	slogger.Info("Starting application")
+// Bootstraps the application
+func Bootstrap(lc fx.Lifecycle, gs *grpc.Server, config *Config, logger *zap.Logger) {
+	logger.Sugar().Info("Starting application")
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
-			slogger.Info("Starting GRPC server.")
+			logger.Sugar().Info("Starting GRPC server.")
 			addr := fmt.Sprintf(":%d", config.ListenPort)
 			list, err := net.Listen("tcp", addr)
 			if err != nil {
 				return err
 			} else {
-				slogger.Info("Listening on " + addr)
+				logger.Sugar().Info("Listening on " + addr)
 			}
 
 			go gs.Serve(list)
@@ -81,38 +71,37 @@ func Bootstrap(lc fx.Lifecycle, gs *grpc.Server, config *Config, slogger *zap.Su
 			return nil
 		},
 		OnStop: func(ctx context.Context) error {
-			slogger.Info("Stopping GRPC server.")
+			logger.Sugar().Info("Stopping GRPC server.")
 			gs.Stop()
 
-			return slogger.Sync()
+			return logger.Sync()
 		},
 	})
 }
 
-func ProvideLogger() *zap.SugaredLogger {
+// Provides the ZAP logger
+func ProvideLogger() *zap.Logger {
 	logger, _ := zap.NewProduction()
-	slogger := logger.Sugar()
 
-	return slogger
+	return logger
 }
 
 func main() {
 	app := fx.New(
 		fx.Provide(
-			NewLogger,
 			ProvideLogger,
 			ProvideConfig,
-			server.NewAuthenticationServer,
-			authentication.NewService,
-			token.NewRepository,
-			secret.NewMemoryRepository,
-			user.NewMemoryRepository,
+			server.ProvideAuthenticationServer,
+			authentication.ProvideAuthenticationService,
+			token.ProvideTokenRepository,
+			secret.ProvideMemorySecretRepository,
+			user.ProvideMemoryUserRepository,
 			ProvideGRPCServer,
 		),
 		fx.Invoke(Bootstrap),
 		fx.WithLogger(
-			func() fxevent.Logger {
-				return fxevent.NopLogger
+			func(logger *zap.Logger) fxevent.Logger {
+				return &fxevent.ZapLogger{Logger: logger}
 			},
 		),
 	)

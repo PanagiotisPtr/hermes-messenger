@@ -2,15 +2,16 @@ package user
 
 import (
 	"fmt"
-	"log"
+
+	"go.uber.org/zap"
 )
 
 type MemoryRepository struct {
-	logger *log.Logger
+	logger *zap.Logger
 	users  map[string]User
 }
 
-func NewMemoryRepository(logger *log.Logger) Repository {
+func ProvideMemoryUserRepository(logger *zap.Logger) Repository {
 	return &MemoryRepository{
 		logger: logger,
 		users:  make(map[string]User),
