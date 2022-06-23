@@ -31,17 +31,17 @@ func ProvideConfig() *Config {
 	grpcReflection := utils.GetEnvVariableBool("GRPC_REFLECTION", false)
 	refreshTokenDurationSeconds := utils.GetEnvVariableInt("REFRESH_TOKEN_EXP_SEC", secondsInDay)
 	accessTokenDurationSeconds := utils.GetEnvVariableInt("ACCESS_TOKEN_EXP_SEC", secondsInHour)
-	keyPairGenerationInterval := utils.GetEnvVariableInt("KEY_PAIR_GENERATION_INTERVAL", secondsInDay)
+	keyPairGenerationInterval := utils.GetEnvVariableInt("KEY_PAIR_GENERATION_INT", secondsInDay)
 
 	return &Config{
-		UUID:                      uuid.New(),
-		ListenPort:                listenPort,
-		GRPCReflection:            grpcReflection,
-		RedisAddress:              redisAddress,
-		RedisPassword:             redisPassword,
-		RedisDatabase:             redisDatabase,
-		RefreshTokenDuration:      time.Second * refreshTokenDurationSeconds,
-		AccessTokenDuration:       time.Second * accessTokenDurationSeconds,
-		KeyPairGenerationInterval: keyPairGenerationInterval,
+		UUID:                 uuid.New(),
+		ListenPort:           listenPort,
+		GRPCReflection:       grpcReflection,
+		RedisAddress:         redisAddress,
+		RedisPassword:        redisPassword,
+		RedisDatabase:        redisDatabase,
+		RefreshTokenDuration: time.Second * refreshTokenDurationSeconds,
+		AccessTokenDuration:  time.Second * accessTokenDurationSeconds,
+        KeyPairGenerationInterval: keyPairGenerationInterval,
 	}
 }

@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-redis/redis/v9"
 	"github.com/panagiotisptr/hermes-messenger/services/authentication/server/config"
 	"github.com/panagiotisptr/hermes-messenger/services/authentication/server/keys"
 	"github.com/panagiotisptr/hermes-messenger/services/authentication/server/token"
@@ -19,52 +18,86 @@ import (
 )
 
 type Service struct {
-	logger              *zap.Logger
-	refreshTokenKeyName string
-	accessTokenKeyName  string
-	tokenRepository     token.Repository
-	keysRepository      keys.Repository
-	userRepository      user.Repository
+	selfUuid                  uuid.UUID
+	logger                    *zap.Logger
+	refreshTokenKeyName       string
+	accessTokenKeyName        string
+	tokenRepository           token.Repository
+	keysRepository            keys.Repository
+	userRepository            user.Repository
+	refreshTokenDuration      time.Duration
+	accessTokenDuration       time.Duration
+	keyPairGenerationInterval time.Duration
 }
 
 func ProvideAuthenticationService(
-	config *config.Config,
+	cfg *config.Config,
 	logger *zap.Logger,
 	tokenRepository token.Repository,
 	keysRepository keys.Repository,
 	userRepository user.Repository,
 ) (*Service, error) {
-	refreshTokenKeyName := "refreshTokenKeyPair:" + config.UUID.String()
-	accessTokenKeyName := "accessTokenKeyPair:" + config.UUID.String()
+	service := &Service{
+		selfUuid:                  cfg.UUID,
+		logger:                    logger,
+		refreshTokenKeyName:       "",
+		accessTokenKeyName:        "",
+		tokenRepository:           tokenRepository,
+		keysRepository:            keysRepository,
+		userRepository:            userRepository,
+		refrefreshTokenDuration:   cfg.refrefreshTokenDuration,
+		accessTokenDuration:       cfg.AccessTokenDuration,
+		keyPairGenerationInterval: cfg.KeyPairGenerationInterval,
+	}
+
+	service.generateKeyPair()
+	go func() {
+		for range time.Tick(service.keyPairGenerationInterval) {
+			service.generateKeyPair()
+		}
+	}()
+
+	return service, nil
+}
+
+func (s *Service) generateKeyPair() {
+	keyUuid := uuid.New().String()
+	refreshTokenKeyName := "refreshTokenKeyPair:" + keyUuid
+	accessTokenKeyName := "accessTokenKeyPair:" + keyUuid
 
 	refreshTokenKeyPair, err := keys.GenerateRSAKeyPair()
 	if err != nil {
-		return nil, err
+		s.logger.Sugar().Error(err)
+		return
 	}
 
 	accessTokenKeyPair, err := keys.GenerateRSAKeyPair()
 	if err != nil {
-		return nil, err
+		s.logger.Sugar().Error(err)
+		return
 	}
 
-	err = keysRepository.StoreKeyPair(refreshTokenKeyName, refreshTokenKeyPair, redis.KeepTTL)
+	err = s.keysRepository.StoreKeyPair(refreshTokenKeyName, refreshTokenKeyPair, 2*s.keyPairGenerationInterval)
 	if err != nil {
-		return nil, err
+		s.logger.Sugar().Error(err)
+		return
 	}
 
-	err = keysRepository.StoreKeyPair(accessTokenKeyName, accessTokenKeyPair, redis.KeepTTL)
+	err = s.keysRepository.StoreKeyPair(accessTokenKeyName, accessTokenKeyPair, 2*s.keyPairGenerationInterval)
 	if err != nil {
-		return nil, err
+		s.logger.Sugar().Error(err)
+		return
 	}
 
-	return &Service{
-		logger:              logger,
-		refreshTokenKeyName: refreshTokenKeyName,
-		accessTokenKeyName:  accessTokenKeyName,
-		tokenRepository:     tokenRepository,
-		keysRepository:      keysRepository,
-		userRepository:      userRepository,
-	}, nil
+	s.refreshTokenKeyName = refreshTokenKeyName
+	s.accessTokenKeyName = accessTokenKeyName
+
+	s.logger.Sugar().Infof(
+		"Updated access and refresh keys for authentication service with UUID: " +
+			s.selfUuid.String() +
+			". Using keys with UUID:" +
+			keyUuid,
+	)
 }
 
 func (s *Service) Register(
@@ -128,7 +161,7 @@ func (s *Service) Authenticate(
 
 	refreshToken, err := s.generateToken(
 		user.Uuid.String(),
-		time.Hour*24,
+		s.refreshTokenDuration,
 		s.refreshTokenKeyName,
 	)
 	if err != nil {
@@ -137,7 +170,7 @@ func (s *Service) Authenticate(
 
 	accessToken, err := s.generateToken(
 		user.Uuid.String(),
-		time.Hour*24,
+		s.accessTokenDuration,
 		s.accessTokenKeyName,
 	)
 	if err != nil {

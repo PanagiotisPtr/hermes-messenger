@@ -94,3 +94,51 @@ func (rr *RedisRepository) GetPrivateKey(keyName string) (*rsa.PrivateKey, error
 
 	return privateKey, nil
 }
+
+func (rr *RedisRepository) getKeysWithPrefix(prefix string) ([]string, error) {
+	keyStrings := make([]string, 0)
+	ctx := context.Background()
+	iter := rr.redisClient.Scan(ctx, 0, prefix+":*", 0).Iterator()
+	for iter.Next(ctx) {
+		keyStrings = append(keyStrings, iter.Val())
+	}
+	if err := iter.Err(); err != nil {
+		return keyStrings, err
+	}
+
+	return keyStrings, nil
+}
+
+func (rr *RedisRepository) GetAllPublicKeys(keyPrefix string) ([]*rsa.PublicKey, error) {
+	publicKeys := make([]*rsa.PublicKey, 0)
+	publicKeyStrings, err := rr.getKeysWithPrefix(keyPrefix)
+	if err != nil {
+		return publicKeys, err
+	}
+	for _, publicKeyString := range publicKeyStrings {
+		publicKey, err := x509.ParsePKCS1PublicKey([]byte(publicKeyString))
+		if err != nil {
+			return publicKeys, err
+		}
+		publicKeys = append(publicKeys, publicKey)
+	}
+
+	return publicKeys, nil
+}
+
+func (rr *RedisRepository) GetAllPrivateKeys(keyPrefix string) ([]*rsa.PrivateKey, error) {
+	privateKeys := make([]*rsa.PrivateKey, 0)
+	privateKeyStrings, err := rr.getKeysWithPrefix(keyPrefix)
+	if err != nil {
+		return privateKeys, err
+	}
+	for _, privateKeyString := range privateKeyStrings {
+		privateKey, err := x509.ParsePKCS1PrivateKey([]byte(privateKeyString))
+		if err != nil {
+			return privateKeys, err
+		}
+		privateKeys = append(privateKeys, privateKey)
+	}
+
+	return privateKeys, nil
+}

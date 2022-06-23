@@ -13,7 +13,7 @@ type MemoryRepository struct {
 	keyStore map[string]KeyPair
 }
 
-func ProvideMemoryKeysRepository(logger *zap.Logger) Repository {
+func ProvideMemoryKeysRepository(logger *zap.Logger) *MemoryRepository {
 	return &MemoryRepository{
 		logger:   logger,
 		keyStore: make(map[string]KeyPair),
