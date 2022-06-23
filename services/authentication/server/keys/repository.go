@@ -1,10 +1,12 @@
-package secret
+package keys
 
-import "crypto/rsa"
+import (
+	"crypto/rsa"
+	"time"
+)
 
 type Repository interface {
-	GenerateRSAKeyPair() (KeyPair, error)
-	StoreKeyPair(string, KeyPair) error
+	StoreKeyPair(string, KeyPair, time.Duration) error
 	GetPublicKey(string) (*rsa.PublicKey, error)
 	GetPrivateKey(string) (*rsa.PrivateKey, error)
 }

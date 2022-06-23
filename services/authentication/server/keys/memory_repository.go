@@ -1,9 +1,9 @@
-package secret
+package keys
 
 import (
-	"crypto/rand"
 	"crypto/rsa"
 	"fmt"
+	"time"
 
 	"go.uber.org/zap"
 )
@@ -13,30 +13,14 @@ type MemoryRepository struct {
 	keyStore map[string]KeyPair
 }
 
-func ProvideMemorySecretRepository(logger *zap.Logger) Repository {
+func ProvideMemoryKeysRepository(logger *zap.Logger) Repository {
 	return &MemoryRepository{
 		logger:   logger,
 		keyStore: make(map[string]KeyPair),
 	}
 }
 
-func (mr *MemoryRepository) GenerateRSAKeyPair() (KeyPair, error) {
-	privateKey, err := rsa.GenerateKey(rand.Reader, 4096)
-	if err != nil {
-		return KeyPair{
-			publicKey:  nil,
-			privateKey: nil,
-		}, fmt.Errorf("Could not generate RSA key pair")
-	}
-	publicKey := &privateKey.PublicKey
-
-	return KeyPair{
-		publicKey:  publicKey,
-		privateKey: privateKey,
-	}, nil
-}
-
-func (mr *MemoryRepository) StoreKeyPair(keyName string, keyPair KeyPair) error {
+func (mr *MemoryRepository) StoreKeyPair(keyName string, keyPair KeyPair, ttl time.Duration) error {
 	if _, ok := mr.keyStore[keyName]; ok {
 		return fmt.Errorf("There's already a key stored under the name %s", keyName)
 	}

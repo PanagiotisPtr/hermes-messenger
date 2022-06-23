@@ -7,7 +7,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/panagiotisptr/hermes-messenger/services/authentication/server/secret"
+	"github.com/go-redis/redis/v9"
+	"github.com/panagiotisptr/hermes-messenger/services/authentication/server/config"
+	"github.com/panagiotisptr/hermes-messenger/services/authentication/server/keys"
 	"github.com/panagiotisptr/hermes-messenger/services/authentication/server/token"
 	"github.com/panagiotisptr/hermes-messenger/services/authentication/server/user"
 	"go.uber.org/zap"
@@ -21,35 +23,36 @@ type Service struct {
 	refreshTokenKeyName string
 	accessTokenKeyName  string
 	tokenRepository     token.Repository
-	secretRepository    secret.Repository
+	keysRepository      keys.Repository
 	userRepository      user.Repository
 }
 
 func ProvideAuthenticationService(
+	config *config.Config,
 	logger *zap.Logger,
 	tokenRepository token.Repository,
-	secretRepository secret.Repository,
+	keysRepository keys.Repository,
 	userRepository user.Repository,
 ) (*Service, error) {
-	refreshTokenKeyName := "refreshTokenKeyPair"
-	accessTokenKeyName := "accessTokenKeyPair"
+	refreshTokenKeyName := "refreshTokenKeyPair:" + config.UUID.String()
+	accessTokenKeyName := "accessTokenKeyPair:" + config.UUID.String()
 
-	refreshTokenKeyPair, err := secretRepository.GenerateRSAKeyPair()
+	refreshTokenKeyPair, err := keys.GenerateRSAKeyPair()
 	if err != nil {
 		return nil, err
 	}
 
-	accessTokenKeyPair, err := secretRepository.GenerateRSAKeyPair()
+	accessTokenKeyPair, err := keys.GenerateRSAKeyPair()
 	if err != nil {
 		return nil, err
 	}
 
-	err = secretRepository.StoreKeyPair(refreshTokenKeyName, refreshTokenKeyPair)
+	err = keysRepository.StoreKeyPair(refreshTokenKeyName, refreshTokenKeyPair, redis.KeepTTL)
 	if err != nil {
 		return nil, err
 	}
 
-	err = secretRepository.StoreKeyPair(accessTokenKeyName, accessTokenKeyPair)
+	err = keysRepository.StoreKeyPair(accessTokenKeyName, accessTokenKeyPair, redis.KeepTTL)
 	if err != nil {
 		return nil, err
 	}
@@ -59,7 +62,7 @@ func ProvideAuthenticationService(
 		refreshTokenKeyName: refreshTokenKeyName,
 		accessTokenKeyName:  accessTokenKeyName,
 		tokenRepository:     tokenRepository,
-		secretRepository:    secretRepository,
+		keysRepository:      keysRepository,
 		userRepository:      userRepository,
 	}, nil
 }
@@ -90,7 +93,7 @@ func (s *Service) generateToken(
 	ttl time.Duration,
 	tokenKeyName string,
 ) (string, error) {
-	tokenPrivateKey, err := s.secretRepository.GetPrivateKey(
+	tokenPrivateKey, err := s.keysRepository.GetPrivateKey(
 		tokenKeyName,
 	)
 	if err != nil {
@@ -145,7 +148,7 @@ func (s *Service) Authenticate(
 }
 
 func (s *Service) Refresh(refreshToken string) (string, error) {
-	publicKey, err := s.secretRepository.GetPublicKey(
+	publicKey, err := s.keysRepository.GetPublicKey(
 		s.refreshTokenKeyName,
 	)
 	if err != nil {
@@ -171,7 +174,7 @@ func (s *Service) Refresh(refreshToken string) (string, error) {
 
 func (s *Service) GetPublicKey() (string, error) {
 	// Only allow access to the public key for the access tokens
-	publicKey, err := s.secretRepository.GetPublicKey(
+	publicKey, err := s.keysRepository.GetPublicKey(
 		s.accessTokenKeyName,
 	)
 	if err != nil {

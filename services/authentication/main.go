@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/panagiotisptr/hermes-messenger/libs/utils"
+	redis "github.com/go-redis/redis/v9"
 	"github.com/panagiotisptr/hermes-messenger/protos"
 	"github.com/panagiotisptr/hermes-messenger/services/authentication/server"
 	"github.com/panagiotisptr/hermes-messenger/services/authentication/server/authentication"
-	"github.com/panagiotisptr/hermes-messenger/services/authentication/server/secret"
+	"github.com/panagiotisptr/hermes-messenger/services/authentication/server/config"
+	"github.com/panagiotisptr/hermes-messenger/services/authentication/server/keys"
 	"github.com/panagiotisptr/hermes-messenger/services/authentication/server/token"
 	"github.com/panagiotisptr/hermes-messenger/services/authentication/server/user"
 	"go.uber.org/fx"
@@ -20,45 +21,36 @@ import (
 	"google.golang.org/grpc/reflection"
 )
 
-// The application config
-type Config struct {
-	ListenPort     int
-	GRPCReflection bool
-}
-
-// Provides the application config
-func ProvideConfig() *Config {
-	listenPort := utils.GetEnvVariableInt("LISTEN_PORT", 80)
-	grpcReflection := utils.GetEnvVariableBool("GRPC_REFLECTION", false)
-
-	return &Config{
-		ListenPort:     listenPort,
-		GRPCReflection: grpcReflection,
-	}
-}
-
 // Provides the GRPC server instance
 func ProvideGRPCServer(
 	as *server.AuthenticationServer,
-	config *Config,
+	cfg *config.Config,
 ) (*grpc.Server, error) {
 	gs := grpc.NewServer()
 	protos.RegisterAuthenticationServer(gs, as)
 
-	if config.GRPCReflection {
+	if cfg.GRPCReflection {
 		reflection.Register(gs)
 	}
 
 	return gs, nil
 }
 
+func ProvideRedisClient(cfg *config.Config) *redis.Client {
+	return redis.NewClient(&redis.Options{
+		Addr:     cfg.RedisAddress,
+		Password: cfg.RedisPassword,
+		DB:       cfg.RedisDatabase,
+	})
+}
+
 // Bootstraps the application
-func Bootstrap(lc fx.Lifecycle, gs *grpc.Server, config *Config, logger *zap.Logger) {
+func Bootstrap(lc fx.Lifecycle, gs *grpc.Server, cfg *config.Config, logger *zap.Logger) {
 	logger.Sugar().Info("Starting application")
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
 			logger.Sugar().Info("Starting GRPC server.")
-			addr := fmt.Sprintf(":%d", config.ListenPort)
+			addr := fmt.Sprintf(":%d", cfg.ListenPort)
 			list, err := net.Listen("tcp", addr)
 			if err != nil {
 				return err
@@ -89,12 +81,13 @@ func ProvideLogger() *zap.Logger {
 func main() {
 	app := fx.New(
 		fx.Provide(
+			ProvideRedisClient,
 			ProvideLogger,
-			ProvideConfig,
+			config.ProvideConfig,
 			server.ProvideAuthenticationServer,
 			authentication.ProvideAuthenticationService,
 			token.ProvideTokenRepository,
-			secret.ProvideMemorySecretRepository,
+			keys.ProvideRedisKeysRepository,
 			user.ProvideMemoryUserRepository,
 			ProvideGRPCServer,
 		),
