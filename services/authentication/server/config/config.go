@@ -40,8 +40,8 @@ func ProvideConfig() *Config {
 		RedisAddress:              redisAddress,
 		RedisPassword:             redisPassword,
 		RedisDatabase:             redisDatabase,
-		RefreshTokenDuration:      time.Second * refreshTokenDurationSeconds,
-		AccessTokenDuration:       time.Second * accessTokenDurationSeconds,
-		KeyPairGenerationInterval: keyPairGenerationInterval,
+		RefreshTokenDuration:      time.Second * time.Duration(refreshTokenDurationSeconds),
+		AccessTokenDuration:       time.Second * time.Duration(accessTokenDurationSeconds),
+		KeyPairGenerationInterval: time.Second * time.Duration(keyPairGenerationInterval),
 	}
 }

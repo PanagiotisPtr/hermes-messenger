@@ -11,6 +11,11 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	publicKeySuffix  = "-public"
+	privateKeySuffix = "-private"
+)
+
 type RedisRepository struct {
 	logger      *zap.Logger
 	redisClient *redis.Client
@@ -28,7 +33,7 @@ func (rr *RedisRepository) StoreKeyPair(keyPairName string, keyPair KeyPair, ttl
 	privateKeyString := x509.MarshalPKCS1PrivateKey(keyPair.privateKey)
 	_, err := rr.redisClient.SetNX(
 		context.Background(),
-		keyPairName+"-public",
+		keyPairName+publicKeySuffix,
 		string(publicKeyString),
 		ttl,
 	).Result()
@@ -38,7 +43,7 @@ func (rr *RedisRepository) StoreKeyPair(keyPairName string, keyPair KeyPair, ttl
 
 	_, err = rr.redisClient.SetNX(
 		context.Background(),
-		keyPairName+"-private",
+		keyPairName+privateKeySuffix,
 		string(privateKeyString),
 		ttl,
 	).Result()
@@ -70,7 +75,7 @@ func (rr *RedisRepository) getKeyPair(keyName string) (KeyPair, error) {
 }
 
 func (rr *RedisRepository) GetPublicKey(keyName string) (*rsa.PublicKey, error) {
-	publicKeyString, err := rr.redisClient.Get(context.Background(), keyName+"-public").Result()
+	publicKeyString, err := rr.redisClient.Get(context.Background(), keyName).Result()
 	if err != nil {
 		return nil, fmt.Errorf("Could not find public key pair under the name %s", keyName)
 	}
@@ -83,7 +88,7 @@ func (rr *RedisRepository) GetPublicKey(keyName string) (*rsa.PublicKey, error) 
 }
 
 func (rr *RedisRepository) GetPrivateKey(keyName string) (*rsa.PrivateKey, error) {
-	privateKeyString, err := rr.redisClient.Get(context.Background(), keyName+"-private").Result()
+	privateKeyString, err := rr.redisClient.Get(context.Background(), keyName).Result()
 	if err != nil {
 		return nil, fmt.Errorf("Could not find private key pair under the name %s", keyName)
 	}
@@ -95,10 +100,10 @@ func (rr *RedisRepository) GetPrivateKey(keyName string) (*rsa.PrivateKey, error
 	return privateKey, nil
 }
 
-func (rr *RedisRepository) getKeysWithPrefix(prefix string) ([]string, error) {
+func (rr *RedisRepository) getKeysWithPattern(pattern string) ([]string, error) {
 	keyStrings := make([]string, 0)
 	ctx := context.Background()
-	iter := rr.redisClient.Scan(ctx, 0, prefix+":*", 0).Iterator()
+	iter := rr.redisClient.Scan(ctx, 0, pattern, 0).Iterator()
 	for iter.Next(ctx) {
 		keyStrings = append(keyStrings, iter.Val())
 	}
@@ -111,12 +116,12 @@ func (rr *RedisRepository) getKeysWithPrefix(prefix string) ([]string, error) {
 
 func (rr *RedisRepository) GetAllPublicKeys(keyPrefix string) ([]*rsa.PublicKey, error) {
 	publicKeys := make([]*rsa.PublicKey, 0)
-	publicKeyStrings, err := rr.getKeysWithPrefix(keyPrefix)
+	publicKeyStrings, err := rr.getKeysWithPattern(keyPrefix + "*" + publicKeySuffix)
 	if err != nil {
 		return publicKeys, err
 	}
-	for _, publicKeyString := range publicKeyStrings {
-		publicKey, err := x509.ParsePKCS1PublicKey([]byte(publicKeyString))
+	for _, publicKeyName := range publicKeyStrings {
+		publicKey, err := rr.GetPublicKey(publicKeyName)
 		if err != nil {
 			return publicKeys, err
 		}
@@ -128,12 +133,12 @@ func (rr *RedisRepository) GetAllPublicKeys(keyPrefix string) ([]*rsa.PublicKey,
 
 func (rr *RedisRepository) GetAllPrivateKeys(keyPrefix string) ([]*rsa.PrivateKey, error) {
 	privateKeys := make([]*rsa.PrivateKey, 0)
-	privateKeyStrings, err := rr.getKeysWithPrefix(keyPrefix)
+	privateKeyStrings, err := rr.getKeysWithPattern(keyPrefix + "*" + privateKeySuffix)
 	if err != nil {
 		return privateKeys, err
 	}
-	for _, privateKeyString := range privateKeyStrings {
-		privateKey, err := x509.ParsePKCS1PrivateKey([]byte(privateKeyString))
+	for _, privateKeyName := range privateKeyStrings {
+		privateKey, err := rr.GetPrivateKey(privateKeyName)
 		if err != nil {
 			return privateKeys, err
 		}

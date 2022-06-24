@@ -17,6 +17,11 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+const (
+	refreshKeyPairNamePrefix = "refreshToken"
+	accessKeyPairNamePrefix  = "accessToken"
+)
+
 type Service struct {
 	selfUuid                  uuid.UUID
 	logger                    *zap.Logger
@@ -45,7 +50,7 @@ func ProvideAuthenticationService(
 		tokenRepository:           tokenRepository,
 		keysRepository:            keysRepository,
 		userRepository:            userRepository,
-		refrefreshTokenDuration:   cfg.refrefreshTokenDuration,
+		refreshTokenDuration:      cfg.RefreshTokenDuration,
 		accessTokenDuration:       cfg.AccessTokenDuration,
 		keyPairGenerationInterval: cfg.KeyPairGenerationInterval,
 	}
@@ -62,8 +67,8 @@ func ProvideAuthenticationService(
 
 func (s *Service) generateKeyPair() {
 	keyUuid := uuid.New().String()
-	refreshTokenKeyName := "refreshTokenKeyPair:" + keyUuid
-	accessTokenKeyName := "accessTokenKeyPair:" + keyUuid
+	refreshTokenKeyName := refreshKeyPairNamePrefix + ":" + keyUuid
+	accessTokenKeyName := accessKeyPairNamePrefix + ":" + keyUuid
 
 	refreshTokenKeyPair, err := keys.GenerateRSAKeyPair()
 	if err != nil {
@@ -181,49 +186,63 @@ func (s *Service) Authenticate(
 }
 
 func (s *Service) Refresh(refreshToken string) (string, error) {
-	publicKey, err := s.keysRepository.GetPublicKey(
+	publicKeys, err := s.keysRepository.GetAllPublicKeys(
 		s.refreshTokenKeyName,
 	)
 	if err != nil {
-		s.logger.Sugar().Errorf("[ERROR] Failed to get public key: %v", err)
-		return "", fmt.Errorf("Error when generating token")
-	}
-	data, err := s.tokenRepository.ValidateToken(refreshToken, publicKey)
-	if err != nil {
-		return "", err
+		s.logger.Sugar().Errorf("[ERROR] Failed to get public keys: %v", err)
+		return "", fmt.Errorf("Could not validate refresh token")
 	}
 
-	accessToken, err := s.generateToken(
-		data,
-		time.Hour,
-		s.accessTokenKeyName,
-	)
-	if err != nil {
-		return "", err
+	for _, publicKey := range publicKeys {
+		data, err := s.tokenRepository.ValidateToken(refreshToken, publicKey)
+		if err == nil {
+			accessToken, err := s.generateToken(
+				data,
+				time.Hour,
+				s.accessTokenKeyName,
+			)
+			if err != nil {
+				return "", err
+			}
+
+			return accessToken, nil
+		}
 	}
 
-	return accessToken, nil
+	return "", fmt.Errorf("Could not validate refresh token")
 }
 
-func (s *Service) GetPublicKey() (string, error) {
+func (s *Service) GetPublicKeys() ([]string, error) {
+	publicKeyStrings := make([]string, 0)
 	// Only allow access to the public key for the access tokens
-	publicKey, err := s.keysRepository.GetPublicKey(
-		s.accessTokenKeyName,
+	publicKeys, err := s.keysRepository.GetAllPublicKeys(
+		accessKeyPairNamePrefix,
 	)
 	if err != nil {
-		return "", err
+		s.logger.Sugar().Warnf("Failed to fetch public keys. Error: %v", err)
+		return publicKeyStrings, err
 	}
 
-	publicKeyBytes, err := x509.MarshalPKIXPublicKey(publicKey)
-	if err != nil {
-		return "", err
-	}
-	publicKeyBlock := &pem.Block{
-		Type:  "RSA PUBLIC KEY",
-		Bytes: publicKeyBytes,
-	}
-	var publicKeyBuffer bytes.Buffer
-	err = pem.Encode(&publicKeyBuffer, publicKeyBlock)
+	for _, publicKey := range publicKeys {
+		publicKeyBytes, err := x509.MarshalPKIXPublicKey(publicKey)
+		if err != nil {
+			s.logger.Sugar().Warnf("Failed to marshal public key. Error: %v", err)
+			continue
+		}
+		publicKeyBlock := &pem.Block{
+			Type:  "RSA PUBLIC KEY",
+			Bytes: publicKeyBytes,
+		}
+		var publicKeyBuffer bytes.Buffer
+		err = pem.Encode(&publicKeyBuffer, publicKeyBlock)
+		if err != nil {
+			s.logger.Sugar().Warnf("Failed to encode public key to string. Error: %v", err)
+			continue
+		}
 
-	return publicKeyBuffer.String(), nil
+		publicKeyStrings = append(publicKeyStrings, publicKeyBuffer.String())
+	}
+
+	return publicKeyStrings, nil
 }

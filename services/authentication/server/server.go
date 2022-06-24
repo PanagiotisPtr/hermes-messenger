@@ -55,13 +55,13 @@ func (as *AuthenticationServer) Refresh(
 	}, err
 }
 
-func (as *AuthenticationServer) GetPublicKey(
+func (as *AuthenticationServer) GetPublicKeys(
 	ctx context.Context,
-	request *protos.GetPublicKeyRequest,
-) (*protos.GetPublicKeyResponse, error) {
-	publicKey, err := as.service.GetPublicKey()
+	request *protos.GetPublicKeysRequest,
+) (*protos.GetPublicKeysResponse, error) {
+	publicKeys, err := as.service.GetPublicKeys()
 
-	return &protos.GetPublicKeyResponse{
-		PublicKey: publicKey,
+	return &protos.GetPublicKeysResponse{
+		PublicKeys: publicKeys,
 	}, err
 }
