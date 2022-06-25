@@ -6,7 +6,7 @@ service Authentication {
   rpc Register(RegisterRequest) returns (RegisterResponse);
   rpc Authenticate(AuthenticateRequest) returns (AuthenticateResponse);
   rpc Refresh(RefreshRequest) returns (RefreshResponse);
-  rpc GetPublicKey(GetPublicKeyRequest) returns (GetPublicKeyResponse);
+  rpc GetPublicKeys(GetPublicKeysRequest) returns (GetPublicKeysResponse);
 }
 
 message RegisterRequest {
@@ -36,8 +36,8 @@ message RefreshResponse {
   string AccessToken = 1;
 }
 
-message GetPublicKeyRequest {}
+message GetPublicKeysRequest {}
 
-message GetPublicKeyResponse {
-  string PublicKey = 1;
+message GetPublicKeysResponse {
+  repeated string PublicKeys = 1;
 }

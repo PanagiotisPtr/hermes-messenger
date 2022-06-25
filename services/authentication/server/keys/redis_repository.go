@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	publicKeySuffix  = "-public"
-	privateKeySuffix = "-private"
+	PublicKeySuffix  = "-public"
+	PrivateKeySuffix = "-private"
 )
 
 type RedisRepository struct {
@@ -33,7 +33,7 @@ func (rr *RedisRepository) StoreKeyPair(keyPairName string, keyPair KeyPair, ttl
 	privateKeyString := x509.MarshalPKCS1PrivateKey(keyPair.privateKey)
 	_, err := rr.redisClient.SetNX(
 		context.Background(),
-		keyPairName+publicKeySuffix,
+		keyPairName+PublicKeySuffix,
 		string(publicKeyString),
 		ttl,
 	).Result()
@@ -43,7 +43,7 @@ func (rr *RedisRepository) StoreKeyPair(keyPairName string, keyPair KeyPair, ttl
 
 	_, err = rr.redisClient.SetNX(
 		context.Background(),
-		keyPairName+privateKeySuffix,
+		keyPairName+PrivateKeySuffix,
 		string(privateKeyString),
 		ttl,
 	).Result()
@@ -52,26 +52,6 @@ func (rr *RedisRepository) StoreKeyPair(keyPairName string, keyPair KeyPair, ttl
 	}
 
 	return nil
-}
-
-func (rr *RedisRepository) getKeyPair(keyName string) (KeyPair, error) {
-	emptyResponse := KeyPair{
-		publicKey:  nil,
-		privateKey: nil,
-	}
-	publicKey, err := rr.GetPublicKey(keyName)
-	if err != nil {
-		return emptyResponse, err
-	}
-	privateKey, err := rr.GetPrivateKey(keyName)
-	if err != nil {
-		return emptyResponse, err
-	}
-
-	return KeyPair{
-		privateKey: privateKey,
-		publicKey:  publicKey,
-	}, nil
 }
 
 func (rr *RedisRepository) GetPublicKey(keyName string) (*rsa.PublicKey, error) {
@@ -116,7 +96,7 @@ func (rr *RedisRepository) getKeysWithPattern(pattern string) ([]string, error) 
 
 func (rr *RedisRepository) GetAllPublicKeys(keyPrefix string) ([]*rsa.PublicKey, error) {
 	publicKeys := make([]*rsa.PublicKey, 0)
-	publicKeyStrings, err := rr.getKeysWithPattern(keyPrefix + "*" + publicKeySuffix)
+	publicKeyStrings, err := rr.getKeysWithPattern(keyPrefix + "*" + PublicKeySuffix)
 	if err != nil {
 		return publicKeys, err
 	}
@@ -133,7 +113,7 @@ func (rr *RedisRepository) GetAllPublicKeys(keyPrefix string) ([]*rsa.PublicKey,
 
 func (rr *RedisRepository) GetAllPrivateKeys(keyPrefix string) ([]*rsa.PrivateKey, error) {
 	privateKeys := make([]*rsa.PrivateKey, 0)
-	privateKeyStrings, err := rr.getKeysWithPattern(keyPrefix + "*" + privateKeySuffix)
+	privateKeyStrings, err := rr.getKeysWithPattern(keyPrefix + "*" + PrivateKeySuffix)
 	if err != nil {
 		return privateKeys, err
 	}

@@ -132,7 +132,7 @@ func (s *Service) generateToken(
 	tokenKeyName string,
 ) (string, error) {
 	tokenPrivateKey, err := s.keysRepository.GetPrivateKey(
-		tokenKeyName,
+		tokenKeyName + keys.PrivateKeySuffix,
 	)
 	if err != nil {
 		s.logger.Sugar().Errorf("[ERROR] Failed to get private key: %v", err)
@@ -187,7 +187,7 @@ func (s *Service) Authenticate(
 
 func (s *Service) Refresh(refreshToken string) (string, error) {
 	publicKeys, err := s.keysRepository.GetAllPublicKeys(
-		s.refreshTokenKeyName,
+		refreshKeyPairNamePrefix,
 	)
 	if err != nil {
 		s.logger.Sugar().Errorf("[ERROR] Failed to get public keys: %v", err)
