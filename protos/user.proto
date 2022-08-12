@@ -13,12 +13,11 @@ message UserEntity {
 }
 
 message RegisterUserRequest {
-  string Uuid = 1;
-  string Email = 2;
+  string Email = 1;
 }
 
 message RegisterUserResponse {
-  bool Success = 1;
+  string Uuid = 1;
 }
 
 message GetUserRequest {

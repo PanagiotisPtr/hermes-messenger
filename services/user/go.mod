@@ -13,11 +13,13 @@ require (
 	github.com/armon/go-metrics v0.3.10 // indirect
 	github.com/armon/go-radix v1.0.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
-	github.com/cespare/xxhash/v2 v2.1.1 // indirect
+	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/circonus-labs/circonus-gometrics v2.3.1+incompatible // indirect
 	github.com/circonus-labs/circonusllhist v0.1.3 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/fatih/color v1.9.0 // indirect
+	github.com/go-redis/redis/v9 v9.0.0-beta.2 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/btree v1.0.0 // indirect
 	github.com/hashicorp/consul v1.12.1 // indirect
@@ -66,14 +68,17 @@ require (
 	github.com/stretchr/objx v0.1.1 // indirect
 	github.com/stretchr/testify v1.7.0 // indirect
 	github.com/tv42/httpunix v0.0.0-20150427012821-b75d8614f926 // indirect
+	go.uber.org/atomic v1.7.0 // indirect
+	go.uber.org/multierr v1.6.0 // indirect
+	go.uber.org/zap v1.22.0 // indirect
 	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a // indirect
-	golang.org/x/net v0.0.0-20211216030914-fe4d6282115f // indirect
+	golang.org/x/net v0.0.0-20220425223048-2871e0cb64e4 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
-	golang.org/x/sys v0.0.0-20220412211240-33da011f77ad // indirect
-	golang.org/x/text v0.3.6 // indirect
+	golang.org/x/sys v0.0.0-20220422013727-9388b58f7150 // indirect
+	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e // indirect
 	google.golang.org/genproto v0.0.0-20200623002339-fbb79eadd5eb // indirect
-	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
 replace github.com/panagiotisptr/hermes-messenger/libs/service v0.0.0 => ../../libs/service
