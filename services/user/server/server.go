@@ -2,44 +2,52 @@ package server
 
 import (
 	"context"
-	"log"
+	"fmt"
 
 	"github.com/panagiotisptr/hermes-messenger/protos"
 	"github.com/panagiotisptr/hermes-messenger/user/server/user"
+	"go.uber.org/zap"
 
 	"github.com/google/uuid"
 )
 
 type UserServer struct {
-	logger  *log.Logger
+	logger  *zap.Logger
 	service *user.Service
 	protos.UnimplementedUserServer
 }
 
-func NewUserServer(logger *log.Logger) (*UserServer, error) {
-	service := user.NewService(logger)
-
+func ProvideUserServer(
+	logger *zap.Logger,
+	service *user.Service,
+) (*UserServer, error) {
 	return &UserServer{
 		logger:  logger,
 		service: service,
 	}, nil
 }
 
+func userToEntity(u *user.User) *protos.UserEntity {
+	if u == nil {
+		return nil
+	}
+
+	return &protos.UserEntity{
+		Uuid:  u.Uuid.String(),
+		Email: u.Email,
+	}
+}
+
 func (us *UserServer) RegisterUser(
 	ctx context.Context,
 	request *protos.RegisterUserRequest,
 ) (*protos.RegisterUserResponse, error) {
-	response := &protos.RegisterUserResponse{
-		Success: false,
-	}
-	userUuid, err := uuid.Parse(request.Uuid)
-	if err != nil {
-		return response, err
-	}
-	err = us.service.RegisterUser(userUuid, request.Email)
-	response.Success = err == nil
+	u, err := us.service.RegisterUser(ctx, request.Email)
 
-	return response, err
+	us.logger.Sugar().Info(fmt.Sprintf("Registering user with email %s", request.Email))
+	return &protos.RegisterUserResponse{
+		User: userToEntity(u),
+	}, err
 }
 
 func (us *UserServer) GetUser(
@@ -47,22 +55,18 @@ func (us *UserServer) GetUser(
 	request *protos.GetUserRequest,
 ) (*protos.GetUserResponse, error) {
 	response := &protos.GetUserResponse{
-		User: &protos.UserEntity{
-			Uuid:  "",
-			Email: "",
-		},
+		User: nil,
 	}
-	userUuid, err := uuid.Parse(request.Uuid)
+	id, err := uuid.Parse(request.Uuid)
 	if err != nil {
 		return response, err
 	}
 
-	user, err := us.service.GetUser(userUuid)
+	u, err := us.service.GetUser(ctx, id)
 	if err != nil {
 		return response, err
 	}
-	response.User.Uuid = user.Uuid.String()
-	response.User.Email = user.Email
+	response.User = userToEntity(u)
 
 	return response, err
 }
