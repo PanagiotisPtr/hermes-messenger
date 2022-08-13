@@ -17,7 +17,7 @@ message RegisterUserRequest {
 }
 
 message RegisterUserResponse {
-  string Uuid = 1;
+	UserEntity User = 1;
 }
 
 message GetUserRequest {

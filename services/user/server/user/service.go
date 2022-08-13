@@ -1,27 +1,37 @@
 package user
 
 import (
-	"log"
+	"context"
 
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 )
 
 type Service struct {
-	logger   *log.Logger
+	logger   *zap.Logger
 	userRepo Repository
 }
 
-func NewService(logger *log.Logger) *Service {
+func ProvideUserService(
+	logger *zap.Logger,
+	userRepo Repository,
+) *Service {
 	return &Service{
 		logger:   logger,
-		userRepo: NewMemoryRepository(logger),
+		userRepo: userRepo,
 	}
 }
 
-func (s *Service) RegisterUser(userUuid uuid.UUID, email string) error {
-	return s.userRepo.AddUser(userUuid, email)
+func (s *Service) RegisterUser(
+	ctx context.Context,
+	email string,
+) (*User, error) {
+	return s.userRepo.AddUser(ctx, email)
 }
 
-func (s *Service) GetUser(userUuid uuid.UUID) (*User, error) {
-	return s.userRepo.GetUser(userUuid)
+func (s *Service) GetUser(
+	ctx context.Context,
+	id uuid.UUID,
+) (*User, error) {
+	return s.userRepo.GetUser(ctx, id)
 }

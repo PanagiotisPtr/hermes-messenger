@@ -1,8 +1,12 @@
 package user
 
-import "github.com/google/uuid"
+import (
+	"context"
+
+	"github.com/google/uuid"
+)
 
 type Repository interface {
-	AddUser(string) string
-	GetUser(uuid.UUID) (*User, error)
+	AddUser(context.Context, string) (*User, error)
+	GetUser(context.Context, uuid.UUID) (*User, error)
 }
