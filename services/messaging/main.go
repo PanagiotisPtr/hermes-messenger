@@ -1,48 +1,94 @@
 package main
 
 import (
-	"log"
+	"context"
+	"fmt"
+	"net"
 
-	"github.com/panagiotisptr/hermes-messenger/libs/service"
-	"github.com/panagiotisptr/hermes-messenger/libs/utils"
+	"github.com/elastic/go-elasticsearch/v8"
+	"github.com/panagiotisptr/hermes-messenger/messaging/config"
 	"github.com/panagiotisptr/hermes-messenger/messaging/server"
+	"github.com/panagiotisptr/hermes-messenger/messaging/server/messaging"
 	"github.com/panagiotisptr/hermes-messenger/protos"
+	"go.uber.org/fx"
+	"go.uber.org/fx/fxevent"
+	"go.uber.org/zap"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
-func main() {
-	listenPort := utils.GetEnvVariableInt("LISTEN_PORT", 80)
-	healthCheckPort := utils.GetEnvVariableInt("HEALTH_CHECK_PORT", 12345)
+// Provides the GRPC server instance
+func ProvideGRPCServer(
+	ms *server.MessagingServer,
+	cfg *config.Config,
+) (*grpc.Server, error) {
+	gs := grpc.NewServer()
+	protos.RegisterMessagingServer(gs, ms)
 
-	ipAddress, err := utils.GetMachineIpAddress()
-	if err != nil {
-		panic(err)
+	if cfg.GRPCReflection {
+		reflection.Register(gs)
 	}
 
-	grpcService := service.NewGRPCService()
-	err = grpcService.Bootstrap(service.GRPCServiceConfig{
-		ServiceName:     "messaging",
-		HostName:        ipAddress,
-		ListenPort:      listenPort,
-		HealthCheckPort: healthCheckPort,
-		GRPCReflection:  true,
-	}, func(gs *grpc.Server, logger *log.Logger) error {
-		cs := server.NewMessagingServer(logger)
-		if err != nil {
-			return err
-		}
-		protos.RegisterMessagingServer(gs, cs)
+	return gs, nil
+}
 
-		return nil
+func ProvideElasticsearchClient(cfg *config.Config) (*elasticsearch.Client, error) {
+	return elasticsearch.NewClient(cfg.ESConfig)
+}
+
+// Bootstraps the application
+func Bootstrap(lc fx.Lifecycle, gs *grpc.Server, cfg *config.Config, logger *zap.Logger) {
+	logger.Sugar().Info("Starting user service")
+	lc.Append(fx.Hook{
+		OnStart: func(ctx context.Context) error {
+			logger.Sugar().Info("Starting GRPC server.")
+			addr := fmt.Sprintf(":%d", cfg.ListenPort)
+			list, err := net.Listen("tcp", addr)
+			if err != nil {
+				return err
+			} else {
+				logger.Sugar().Info("Listening on " + addr)
+			}
+
+			go gs.Serve(list)
+
+			return nil
+		},
+		OnStop: func(ctx context.Context) error {
+			logger.Sugar().Info("Stopping GRPC server.")
+			gs.Stop()
+
+			return logger.Sync()
+		},
 	})
-	if err != nil {
-		panic(err)
-	}
+}
 
-	err = grpcService.Start()
-	if err != nil {
-		panic(err)
-	}
-	defer grpcService.Stop()
+// Provides the ZAP logger
+func ProvideLogger() *zap.Logger {
+	logger, _ := zap.NewProduction()
+
+	return logger
+}
+
+func main() {
+	app := fx.New(
+		fx.Provide(
+			ProvideElasticsearchClient,
+			ProvideLogger,
+			config.ProvideConfig,
+			server.ProvideUserServer,
+			messaging.ProvideMessagingService,
+			messaging.ProvideESRepository,
+			ProvideGRPCServer,
+		),
+		fx.Invoke(Bootstrap),
+		fx.WithLogger(
+			func(logger *zap.Logger) fxevent.Logger {
+				return &fxevent.ZapLogger{Logger: logger}
+			},
+		),
+	)
+
+	app.Run()
 }

@@ -1,67 +1,103 @@
 package messaging
 
 import (
-	"log"
+	"context"
+	"sort"
 	"time"
 
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 )
 
-type MessagingService struct {
-	logger *log.Logger
-	mr     *MemoryRepository
+type Service struct {
+	logger      *zap.Logger
+	messageRepo Repository
 }
 
-func NewMessagingService(l *log.Logger) *MessagingService {
-	return &MessagingService{
-		logger: l,
-		mr:     NewMemoryRepository(l),
+func ProvideMessagingService(
+	logger *zap.Logger,
+	messageRepo Repository,
+) *Service {
+	return &Service{
+		logger:      logger,
+		messageRepo: messageRepo,
 	}
 }
 
-func (ms *MessagingService) SendMessage(
-	from string,
-	to string,
+func (s *Service) SendMessage(
+	ctx context.Context,
+	from uuid.UUID,
+	to uuid.UUID,
 	content string,
 ) error {
-	fromUuid, err := uuid.Parse(from)
-	if err != nil {
-		return err
-	}
-
-	toUuid, err := uuid.Parse(to)
-	if err != nil {
-		return err
-	}
-
-	return ms.mr.SaveMessage(Message{
-		From:      fromUuid,
-		To:        toUuid,
-		Timestamp: time.Now().Unix(),
-		Content:   content,
-	})
+	return s.messageRepo.SaveMessage(
+		ctx,
+		from,
+		to,
+		content,
+	)
 }
 
-func (ms *MessagingService) GetMessagesBetweenUsers(
-	from string,
-	to string,
-) ([]Message, error) {
-	messages := make([]Message, 0)
-
-	fromUuid, err := uuid.Parse(from)
+func (s *Service) GetMessagesBetweenUsers(
+	ctx context.Context,
+	from uuid.UUID,
+	to uuid.UUID,
+	start time.Time,
+	end time.Time,
+) ([]*Message, error) {
+	ms := make([]*Message, 0)
+	left, err := s.messageRepo.GetMessages(
+		ctx,
+		from,
+		to,
+		start,
+		end,
+	)
 	if err != nil {
-		return messages, err
+		return ms, err
 	}
 
-	toUuid, err := uuid.Parse(to)
+	right, err := s.messageRepo.GetMessages(
+		ctx,
+		to,
+		from,
+		start,
+		end,
+	)
 	if err != nil {
-		return messages, err
+		return ms, err
 	}
 
-	messages, err = ms.mr.GetMessagesBetweenUsers(fromUuid, toUuid)
-	if err != nil {
-		return messages, err
+	// Probably don't need to sort the results here
+	sort.Slice(left, func(i, j int) bool {
+		return ms[i].Timestamp < ms[j].Timestamp
+	})
+
+	sort.Slice(left, func(i, j int) bool {
+		return ms[i].Timestamp < ms[j].Timestamp
+	})
+
+	i := 0
+	j := 0
+	for i < len(left) && j < len(right) {
+		if left[i].Timestamp < right[j].Timestamp {
+			ms = append(ms, left[i])
+			i++
+		} else {
+			ms = append(ms, right[j])
+			j++
+		}
 	}
 
-	return messages, nil
+	for i < len(left) {
+		ms = append(ms, left[i])
+		i++
+	}
+
+	for j < len(right) {
+		ms = append(ms, right[j])
+		j++
+	}
+
+	return ms, nil
 }
