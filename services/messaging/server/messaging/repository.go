@@ -1,8 +1,13 @@
 package messaging
 
-import "github.com/google/uuid"
+import (
+	"context"
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type Repository interface {
-	SaveMessage(Message) error
-	GetMessagesBetweenUsers(uuid.UUID, uuid.UUID) ([]Message, error)
+	SaveMessage(context.Context, uuid.UUID, uuid.UUID, string) error
+	GetMessages(context.Context, uuid.UUID, uuid.UUID, time.Time, time.Time) ([]*Message, error)
 }

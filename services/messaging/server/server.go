@@ -2,65 +2,90 @@ package server
 
 import (
 	"context"
-	"log"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/panagiotisptr/hermes-messenger/messaging/server/messaging"
 	"github.com/panagiotisptr/hermes-messenger/protos"
+	"go.uber.org/zap"
 )
 
 type MessagingServer struct {
-	logger  *log.Logger
-	service *messaging.MessagingService
+	logger  *zap.Logger
+	service *messaging.Service
 	protos.UnimplementedMessagingServer
 }
 
-func NewMessagingServer(l *log.Logger) *MessagingServer {
+func ProvideUserServer(
+	logger *zap.Logger,
+	service *messaging.Service,
+) (*MessagingServer, error) {
 	return &MessagingServer{
-		logger:  l,
-		service: messaging.NewMessagingService(l),
-	}
+		logger:  logger,
+		service: service,
+	}, nil
 }
 
 func (m *MessagingServer) SendMessage(
 	ctx context.Context,
 	request *protos.SendMessageRequest,
 ) (*protos.SendMessageResponse, error) {
-	err := m.service.SendMessage(
-		request.From,
-		request.To,
+	fromUuid, err := uuid.Parse(request.From)
+	if err != nil {
+		return &protos.SendMessageResponse{}, err
+	}
+
+	toUuid, err := uuid.Parse(request.To)
+	if err != nil {
+		return &protos.SendMessageResponse{}, err
+	}
+	err = m.service.SendMessage(
+		ctx,
+		fromUuid,
+		toUuid,
 		request.Content,
 	)
 
-	return &protos.SendMessageResponse{
-		Sent: err == nil,
-	}, err
+	return &protos.SendMessageResponse{}, err
 }
 
-func (m *MessagingServer) GetMessagesBetweenUsers(
-	context context.Context,
-	request *protos.GetMessagesBetweenUsersRequest,
-) (*protos.GetMessagesBetweenUsersResponse, error) {
-	messages, err := m.service.GetMessagesBetweenUsers(
-		request.From,
-		request.To,
-	)
+func (m *MessagingServer) GetMessages(
+	ctx context.Context,
+	request *protos.GetMessagesRequest,
+) (*protos.GetMessagesResponse, error) {
+	messages := make([]*protos.Message, 0)
+	fromUuid, err := uuid.Parse(request.From)
 	if err != nil {
-		return &protos.GetMessagesBetweenUsersResponse{
-			Messages: make([]*protos.Message, 0),
+		return &protos.GetMessagesResponse{
+			Messages: messages,
 		}, err
 	}
 
-	protoMessages := make([]*protos.Message, len(messages))
-	for index, message := range messages {
-		protoMessages[index] = &protos.Message{
-			From:      message.From.String(),
-			To:        message.To.String(),
-			Timestamp: message.Timestamp,
-			Content:   message.Content,
-		}
+	toUuid, err := uuid.Parse(request.To)
+	if err != nil {
+		return &protos.GetMessagesResponse{
+			Messages: messages,
+		}, err
 	}
 
-	return &protos.GetMessagesBetweenUsersResponse{
-		Messages: protoMessages,
-	}, nil
+	ms, err := m.service.GetMessagesBetweenUsers(
+		ctx,
+		fromUuid,
+		toUuid,
+		time.Unix(request.Start, 0),
+		time.Unix(request.End, 0),
+	)
+
+	for _, m := range ms {
+		messages = append(messages, &protos.Message{
+			From:      m.From.String(),
+			To:        m.To.String(),
+			Timestamp: m.Timestamp,
+			Content:   m.Content,
+		})
+	}
+
+	return &protos.GetMessagesResponse{
+		Messages: messages,
+	}, err
 }

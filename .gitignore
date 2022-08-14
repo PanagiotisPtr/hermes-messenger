@@ -2,3 +2,4 @@ node_modules
 .vscode
 .DS_Store
 protos/**/*.go
+services/messaging/config/certs/*

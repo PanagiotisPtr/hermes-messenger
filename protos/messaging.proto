@@ -4,7 +4,7 @@ option go_package = "github.com/panagiotisptr/hermes-messenger/messaging/protos"
 
 service Messaging {
   rpc SendMessage(SendMessageRequest) returns (SendMessageResponse);
-  rpc GetMessagesBetweenUsers(GetMessagesBetweenUsersRequest) returns (GetMessagesBetweenUsersResponse);
+  rpc GetMessages(GetMessagesRequest) returns (GetMessagesResponse);
 }
 
 message SendMessageRequest {
@@ -13,13 +13,13 @@ message SendMessageRequest {
   string Content = 3;
 }
 
-message SendMessageResponse {
-  bool Sent = 1;
-}
+message SendMessageResponse {}
 
-message GetMessagesBetweenUsersRequest {
+message GetMessagesRequest {
   string From = 1;
   string To = 2;
+  int64 Start = 3;
+  int64 End = 4;
 }
 
 message Message {
@@ -29,6 +29,6 @@ message Message {
   string Content = 4;
 }
 
-message GetMessagesBetweenUsersResponse {
+message GetMessagesResponse {
   repeated Message Messages = 1;
 }
