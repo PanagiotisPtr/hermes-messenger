@@ -6,6 +6,7 @@ import (
 	"net"
 
 	"github.com/elastic/go-elasticsearch/v8"
+	redis "github.com/go-redis/redis/v9"
 	"github.com/panagiotisptr/hermes-messenger/messaging/config"
 	"github.com/panagiotisptr/hermes-messenger/messaging/server"
 	"github.com/panagiotisptr/hermes-messenger/messaging/server/messaging"
@@ -35,6 +36,10 @@ func ProvideGRPCServer(
 
 func ProvideElasticsearchClient(cfg *config.Config) (*elasticsearch.Client, error) {
 	return elasticsearch.NewClient(cfg.ESConfig)
+}
+
+func ProvideRedisClient(cfg *config.Config) *redis.Client {
+	return redis.NewClient(cfg.Redis)
 }
 
 // Bootstraps the application
@@ -75,6 +80,7 @@ func main() {
 	app := fx.New(
 		fx.Provide(
 			ProvideElasticsearchClient,
+			ProvideRedisClient,
 			ProvideLogger,
 			config.ProvideConfig,
 			server.ProvideUserServer,

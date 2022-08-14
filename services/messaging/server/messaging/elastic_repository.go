@@ -5,11 +5,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"time"
 
 	elasticsearch "github.com/elastic/go-elasticsearch/v8"
 	"github.com/elastic/go-elasticsearch/v8/esapi"
+	redis "github.com/go-redis/redis/v9"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
@@ -19,20 +19,20 @@ const (
 )
 
 type ESRepository struct {
-	logger *zap.Logger
-	//	redisClient *redis.Client
-	es *elasticsearch.Client
+	logger      *zap.Logger
+	redisClient *redis.Client
+	es          *elasticsearch.Client
 }
 
 func ProvideESRepository(
 	logger *zap.Logger,
-	// rc *redis.Client,
+	rc *redis.Client,
 	es *elasticsearch.Client,
 ) Repository {
 	return &ESRepository{
-		logger: logger,
-		//	redisClient: rc,
-		es: es,
+		logger:      logger,
+		redisClient: rc,
+		es:          es,
 	}
 }
 
@@ -77,6 +77,11 @@ func (r *ESRepository) SaveMessage(
 		return fmt.Errorf("[%s] Error indexing document ID=%s", res.Status(), docId)
 	}
 
+	err = r.redisClient.Publish(ctx, "messages", string(b)).Err()
+	if err != nil {
+		r.logger.Sugar().Warnf("Failed to publish message to redis channel: %s", err.Error())
+	}
+
 	return nil
 }
 
@@ -98,7 +103,7 @@ func (r *ESRepository) GetMessages(
 					map[string]interface{}{"range": map[string]interface{}{
 						"Timestamp": map[string]interface{}{
 							"gte": start.Unix(),
-							"lte": time.Now().Unix(),
+							"lte": end.Unix(),
 						},
 					}},
 				},
@@ -148,7 +153,6 @@ func (r *ESRepository) GetMessages(
 
 	// Print the ID and document source for each hit.
 	for _, hit := range rp["hits"].(map[string]interface{})["hits"].([]interface{}) {
-		log.Printf(" * ID=%s, %s", hit.(map[string]interface{})["_id"], hit.(map[string]interface{})["_source"])
 		source := hit.(map[string]interface{})["_source"]
 
 		messageUuid, err := uuid.Parse(source.(map[string]interface{})["Uuid"].(string))

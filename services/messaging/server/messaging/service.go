@@ -70,11 +70,11 @@ func (s *Service) GetMessagesBetweenUsers(
 
 	// Probably don't need to sort the results here
 	sort.Slice(left, func(i, j int) bool {
-		return ms[i].Timestamp < ms[j].Timestamp
+		return left[i].Timestamp < left[j].Timestamp
 	})
 
-	sort.Slice(left, func(i, j int) bool {
-		return ms[i].Timestamp < ms[j].Timestamp
+	sort.Slice(right, func(i, j int) bool {
+		return right[i].Timestamp < right[j].Timestamp
 	})
 
 	i := 0
