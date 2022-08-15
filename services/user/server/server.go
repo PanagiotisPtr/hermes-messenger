@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/panagiotisptr/hermes-messenger/protos"
 	"github.com/panagiotisptr/hermes-messenger/user/server/user"
@@ -44,7 +43,6 @@ func (us *UserServer) RegisterUser(
 ) (*protos.RegisterUserResponse, error) {
 	u, err := us.service.RegisterUser(ctx, request.Email)
 
-	us.logger.Sugar().Info(fmt.Sprintf("Registering user with email %s", request.Email))
 	return &protos.RegisterUserResponse{
 		User: userToEntity(u),
 	}, err

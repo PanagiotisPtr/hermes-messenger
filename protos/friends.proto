@@ -13,21 +13,17 @@ message AddFriendRequest {
   string FriendUuid = 2;
 }
 
-message AddFriendResponse {
-  bool Sent = 1;
-}
+message AddFriendResponse {}
 
 message RemoveFriendRequest {
   string UserUuid = 1;
   string FriendUuid = 2;
 }
 
-message RemoveFriendResponse {
-  bool Success = 1;
-}
+message RemoveFriendResponse {}
 
 message Friend {
-  string UserUuid = 1;
+  string FriendUuid = 1;
   string Status = 2;
 }
 
