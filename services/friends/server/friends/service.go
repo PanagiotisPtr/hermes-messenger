@@ -1,80 +1,66 @@
 package friends
 
 import (
-	"fmt"
-	"log"
-
-	"github.com/panagiotisptr/hermes-messenger/friends/server/connection"
-	"github.com/panagiotisptr/hermes-messenger/friends/server/connection/status"
+	"context"
 
 	"github.com/google/uuid"
+
+	"github.com/panagiotisptr/hermes-messenger/friends/server/connection"
+	"go.uber.org/zap"
 )
 
 type Friend struct {
-	UserUuid uuid.UUID
-	Status   string
+	FriendUuid uuid.UUID
+	Status     string
 }
 
 type Service struct {
-	logger     *log.Logger
-	repository connection.Repository
+	logger   *zap.Logger
+	connRepo connection.Repository
 }
 
-func NewService(logger *log.Logger) *Service {
+func ProvideFriendsService(
+	logger *zap.Logger,
+	connRepo connection.Repository,
+) *Service {
 	return &Service{
-		logger:     logger,
-		repository: connection.NewMemoryRepository(logger),
+		logger:   logger,
+		connRepo: connRepo,
 	}
 }
 
-func (s *Service) AddFriend(userUuid uuid.UUID, friendUuid uuid.UUID) error {
-	if userUuid == friendUuid {
-		return fmt.Errorf("A user can't be a friend with themselves")
-	}
-
-	connection, err := s.repository.GetConnection(userUuid, friendUuid)
-	if err == nil {
-		if connection.Status != status.Accepted {
-			return s.repository.UpdateConnectionStatus(*connection, status.Pending)
-		} else {
-			return nil
-		}
-	}
-
-	return s.repository.AddConnection(userUuid, friendUuid)
+func (s *Service) AddFriend(
+	ctx context.Context,
+	userUuid uuid.UUID,
+	friendUuid uuid.UUID,
+) error {
+	return s.connRepo.AddConnection(ctx, userUuid, friendUuid)
 }
 
-func (s *Service) RemoveFriend(userUuid uuid.UUID, friendUuid uuid.UUID) error {
-	connection, err := s.repository.GetConnection(userUuid, friendUuid)
-	if err != nil {
-		return err
-	}
-
-	err = s.repository.UpdateConnectionStatus(*connection, status.Rejected)
-	if err != nil {
-		return err
-	}
-
-	return nil
+func (s *Service) RemoveFriend(
+	ctx context.Context,
+	userUuid uuid.UUID,
+	friendUuid uuid.UUID,
+) error {
+	return s.connRepo.RemoveConnection(ctx, userUuid, friendUuid)
 }
 
-func (s *Service) GetFriends(userUuid uuid.UUID) ([]Friend, error) {
-	friends := make([]Friend, 0)
-	connections, err := s.repository.GetConnectionsForUser(userUuid)
+func (s *Service) GetFriends(
+	ctx context.Context,
+	userUuid uuid.UUID,
+) ([]*Friend, error) {
+	fs := make([]*Friend, 0)
+	connections, err := s.connRepo.GetConnections(ctx, userUuid)
 	if err != nil {
-		return friends, err
+		return fs, err
 	}
 
-	for _, connection := range connections {
-		friendUuid := connection.From
-		if friendUuid == userUuid {
-			friendUuid = connection.To
-		}
-		friends = append(friends, Friend{
-			UserUuid: friendUuid,
-			Status:   connection.Status,
+	for _, c := range connections {
+		fs = append(fs, &Friend{
+			FriendUuid: c.From,
+			Status:     c.Status,
 		})
 	}
 
-	return friends, nil
+	return fs, nil
 }
