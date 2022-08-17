@@ -8,6 +8,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/panagiotisptr/hermes-messenger/libs/utils v0.0.0
 	github.com/panagiotisptr/hermes-messenger/protos v0.0.0
+	github.com/panagiotisptr/hermes-messenger/services/friends v0.0.0
 	go.uber.org/fx v1.18.1
 	go.uber.org/zap v1.22.0
 	google.golang.org/grpc v1.46.2
@@ -17,9 +18,7 @@ require (
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/elastic/elastic-transport-go/v8 v8.0.0-20211216131617-bbee439d559c // indirect
-	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
-	github.com/pkg/errors v0.9.1 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/dig v1.15.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
@@ -35,3 +34,5 @@ replace github.com/panagiotisptr/hermes-messenger/libs/service v0.0.0 => ../../l
 replace github.com/panagiotisptr/hermes-messenger/libs/utils v0.0.0 => ../../libs/utils
 
 replace github.com/panagiotisptr/hermes-messenger/protos v0.0.0 => ../../protos
+
+replace github.com/panagiotisptr/hermes-messenger/services/friends v0.0.0 => ../friends

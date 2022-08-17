@@ -11,15 +11,17 @@ import (
 
 // Application config
 type Config struct {
-	ListenPort     int
-	GRPCReflection bool
-	ESConfig       elasticsearch.Config
-	Redis          *redis.Options
+	ListenPort            int
+	GRPCReflection        bool
+	ESConfig              elasticsearch.Config
+	FriendsServiceAddress string
+	Redis                 *redis.Options
 }
 
 // Provides the application config
 func ProvideConfig() (*Config, error) {
 	listenPort := utils.GetEnvVariableInt("LISTEN_PORT", 80)
+	friendsServiceAddres := utils.GetEnvVariableString("FRIENDS_SERVICE_ADDR", "localhost:8080")
 	esAddresses := utils.GetEnvVariableString("ES_ADDRESSES", "https://localhost:8200")
 	esUsername := utils.GetEnvVariableString("ES_USERNAME", "elastic")
 	esPassword := utils.GetEnvVariableString("ES_PASSWORD", "")
@@ -36,8 +38,9 @@ func ProvideConfig() (*Config, error) {
 	}
 
 	return &Config{
-		ListenPort:     listenPort,
-		GRPCReflection: grpcReflection,
+		ListenPort:            listenPort,
+		GRPCReflection:        grpcReflection,
+		FriendsServiceAddress: friendsServiceAddres,
 		ESConfig: elasticsearch.Config{
 			Addresses:              strings.Split(esAddresses, ","),
 			Username:               esUsername,
