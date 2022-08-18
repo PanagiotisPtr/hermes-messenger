@@ -109,6 +109,7 @@ func main() {
 			ProvideElasticsearchClient,
 			ProvideRedisClient,
 			ProvideLogger,
+			ProvideFriendsClient,
 			config.ProvideConfig,
 			server.ProvideUserServer,
 			messaging.ProvideMessagingService,
