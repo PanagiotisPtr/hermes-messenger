@@ -43,7 +43,12 @@ func ProvideRedisClient(cfg *config.Config) *redis.Client {
 }
 
 // Bootstraps the application
-func Bootstrap(lc fx.Lifecycle, gs *grpc.Server, cfg *config.Config, logger *zap.Logger) {
+func Bootstrap(
+	lc fx.Lifecycle,
+	gs *grpc.Server,
+	cfg *config.Config,
+	logger *zap.Logger,
+) {
 	logger.Sugar().Info("Starting user service")
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
@@ -76,12 +81,35 @@ func ProvideLogger() *zap.Logger {
 	return logger
 }
 
+// Provides the Friends client instance
+func ProvideFriendsClient(
+	lc fx.Lifecycle,
+	cfg *config.Config,
+) (protos.FriendsClient, error) {
+	friendsConn, err := grpc.Dial(
+		cfg.FriendsServiceAddress,
+		grpc.WithInsecure(),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	lc.Append(fx.Hook{
+		OnStop: func(ctx context.Context) error {
+			return friendsConn.Close()
+		},
+	})
+
+	return protos.NewFriendsClient(friendsConn), nil
+}
+
 func main() {
 	app := fx.New(
 		fx.Provide(
 			ProvideElasticsearchClient,
 			ProvideRedisClient,
 			ProvideLogger,
+			ProvideFriendsClient,
 			config.ProvideConfig,
 			server.ProvideUserServer,
 			messaging.ProvideMessagingService,
