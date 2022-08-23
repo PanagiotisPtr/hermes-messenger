@@ -2,6 +2,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { credentials, ServiceError } from '@grpc/grpc-js';
 import { AuthenticationClient, GetPublicKeysResponse } from '../../grpc-clients/authentication'
+import { parse } from "cookie"
 
 type Data = {
   name: string
@@ -11,6 +12,9 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<Data>
 ) {
+  const cookieHeader = req.headers['cookie'] ?? ''
+  const cookies = parse(cookieHeader)
+  console.log(cookies)
   const service = new AuthenticationClient('localhost:7777', credentials.createInsecure(), {
     'grpc.keepalive_time_ms': 120000,
     'grpc.http2.min_time_between_pings_ms': 120000,
