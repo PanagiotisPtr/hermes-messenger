@@ -140,7 +140,7 @@ func (s *Service) generateToken(
 	}
 	token, err := s.tokenRepository.SignTokenWithClaims(
 		data,
-		time.Hour*24,
+		ttl,
 		tokenPrivateKey,
 	)
 	if err != nil {
@@ -199,7 +199,7 @@ func (s *Service) Refresh(refreshToken string) (string, error) {
 		if err == nil {
 			accessToken, err := s.generateToken(
 				data,
-				time.Hour,
+				s.accessTokenDuration,
 				s.accessTokenKeyName,
 			)
 			if err != nil {

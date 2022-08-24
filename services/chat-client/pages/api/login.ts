@@ -23,7 +23,6 @@ export default async function handler(
     return
   }
 
-
   const service = new AuthenticationClient(
     process.env.AUTHENTICATION_SERVICE_ADDR ?? "",
     credentials.createInsecure(),
@@ -59,7 +58,7 @@ export default async function handler(
         ),
         serialize(
           "accessToken",
-          response.RefreshToken,
+          response.AccessToken,
           {
             httpOnly: true,
             secure: true,

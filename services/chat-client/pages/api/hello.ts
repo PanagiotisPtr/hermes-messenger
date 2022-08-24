@@ -1,14 +1,14 @@
-// Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { credentials, ServiceError } from '@grpc/grpc-js';
 import { AuthenticationClient, GetPublicKeysResponse } from '../../grpc-clients/authentication'
 import { parse } from "cookie"
+import { withAuth } from '../../auth-utils/token';
 
 type Data = {
   name: string
 }
 
-export default async function handler(
+async function handler(
   req: NextApiRequest,
   res: NextApiResponse<Data>
 ) {
@@ -32,3 +32,5 @@ export default async function handler(
   })
   res.status(200).json({ name: 'John Doe' })
 }
+
+export default withAuth(handler)
