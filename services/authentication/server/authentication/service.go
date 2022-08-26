@@ -2,37 +2,34 @@ package authentication
 
 import (
 	"bytes"
+	"context"
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
 	"time"
 
+	"github.com/panagiotisptr/hermes-messenger/protos"
 	"github.com/panagiotisptr/hermes-messenger/services/authentication/server/config"
+	"github.com/panagiotisptr/hermes-messenger/services/authentication/server/credentials"
 	"github.com/panagiotisptr/hermes-messenger/services/authentication/server/keys"
 	"github.com/panagiotisptr/hermes-messenger/services/authentication/server/token"
-	"github.com/panagiotisptr/hermes-messenger/services/authentication/server/user"
 	"go.uber.org/zap"
 
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
-const (
-	refreshKeyPairNamePrefix = "refreshToken"
-	accessKeyPairNamePrefix  = "accessToken"
-)
-
 type Service struct {
-	selfUuid                  uuid.UUID
-	logger                    *zap.Logger
-	refreshTokenKeyName       string
-	accessTokenKeyName        string
-	tokenRepository           token.Repository
-	keysRepository            keys.Repository
-	userRepository            user.Repository
-	refreshTokenDuration      time.Duration
-	accessTokenDuration       time.Duration
-	keyPairGenerationInterval time.Duration
+	selfUuid              uuid.UUID
+	logger                *zap.Logger
+	refreshKid            uuid.UUID
+	accessKid             uuid.UUID
+	tokenRepository       token.Repository
+	keysRepository        keys.Repository
+	credentialsRepository credentials.Repository
+	refreshTokenDuration  time.Duration
+	accessTokenDuration   time.Duration
+	userClient            protos.UserClient
 }
 
 func ProvideAuthenticationService(
@@ -40,99 +37,114 @@ func ProvideAuthenticationService(
 	logger *zap.Logger,
 	tokenRepository token.Repository,
 	keysRepository keys.Repository,
-	userRepository user.Repository,
+	credentialsRepository credentials.Repository,
+	userClient protos.UserClient,
 ) (*Service, error) {
 	service := &Service{
-		selfUuid:                  cfg.UUID,
-		logger:                    logger,
-		refreshTokenKeyName:       "",
-		accessTokenKeyName:        "",
-		tokenRepository:           tokenRepository,
-		keysRepository:            keysRepository,
-		userRepository:            userRepository,
-		refreshTokenDuration:      cfg.RefreshTokenDuration,
-		accessTokenDuration:       cfg.AccessTokenDuration,
-		keyPairGenerationInterval: cfg.KeyPairGenerationInterval,
+		selfUuid:              cfg.UUID,
+		logger:                logger,
+		tokenRepository:       tokenRepository,
+		keysRepository:        keysRepository,
+		credentialsRepository: credentialsRepository,
+		refreshTokenDuration:  cfg.RefreshTokenDuration,
+		accessTokenDuration:   cfg.AccessTokenDuration,
+		userClient:            userClient,
 	}
-
-	service.generateKeyPair()
-	go func() {
-		for range time.Tick(service.keyPairGenerationInterval) {
-			service.generateKeyPair()
-		}
-	}()
 
 	return service, nil
 }
 
-func (s *Service) generateKeyPair() {
-	keyUuid := uuid.New().String()
-	refreshTokenKeyName := refreshKeyPairNamePrefix + ":" + keyUuid
-	accessTokenKeyName := accessKeyPairNamePrefix + ":" + keyUuid
-
-	refreshTokenKeyPair, err := keys.GenerateRSAKeyPair()
+func (s *Service) GenerateKeyPair(
+	ctx context.Context,
+	keyPairGenerationInterval time.Duration,
+) {
+	refreshTokenKeyPair, err := keys.GenerateRSAKeyPair(keys.RefreshKeyType)
 	if err != nil {
 		s.logger.Sugar().Error(err)
 		return
 	}
 
-	accessTokenKeyPair, err := keys.GenerateRSAKeyPair()
+	accessTokenKeyPair, err := keys.GenerateRSAKeyPair(keys.AccessKeyType)
 	if err != nil {
 		s.logger.Sugar().Error(err)
 		return
 	}
 
-	err = s.keysRepository.StoreKeyPair(refreshTokenKeyName, refreshTokenKeyPair, 2*s.keyPairGenerationInterval)
+	err = s.keysRepository.StoreKeyPair(ctx, refreshTokenKeyPair, 2*keyPairGenerationInterval)
 	if err != nil {
 		s.logger.Sugar().Error(err)
 		return
 	}
 
-	err = s.keysRepository.StoreKeyPair(accessTokenKeyName, accessTokenKeyPair, 2*s.keyPairGenerationInterval)
+	err = s.keysRepository.StoreKeyPair(ctx, accessTokenKeyPair, 2*keyPairGenerationInterval)
 	if err != nil {
 		s.logger.Sugar().Error(err)
 		return
 	}
 
-	s.refreshTokenKeyName = refreshTokenKeyName
-	s.accessTokenKeyName = accessTokenKeyName
+	s.refreshKid = refreshTokenKeyPair.Uuid
+	s.accessKid = accessTokenKeyPair.Uuid
 
 	s.logger.Sugar().Infof(
 		"Updated access and refresh keys for authentication service with UUID: " +
 			s.selfUuid.String() +
-			". Using keys with UUID:" +
-			keyUuid,
+			". Using refresh token key with UUID:" +
+			refreshTokenKeyPair.Uuid.String() +
+			". Using access token key with UUID:" +
+			accessTokenKeyPair.Uuid.String(),
 	)
 }
 
 func (s *Service) Register(
+	ctx context.Context,
 	email string,
 	password string,
-) (bool, error) {
+) error {
 	passwordHash, err := bcrypt.GenerateFromPassword(
 		[]byte(password),
 		bcrypt.DefaultCost,
 	)
 	if err != nil {
-		return false, err
+		return err
 	}
 
-	err = s.userRepository.CreateUser(user.User{
-		Uuid:     uuid.New(),
-		Email:    email,
-		Password: string(passwordHash),
-	})
+	resp, err := s.userClient.RegisterUser(
+		ctx,
+		&protos.RegisterUserRequest{
+			Email: email,
+		},
+	)
+	if err != nil {
+		return err
+	}
+	uid, err := uuid.Parse(resp.User.Uuid)
+	if err != nil {
+		return err
+	}
 
-	return err == nil, err
+	err = s.credentialsRepository.CreateCredentials(
+		ctx,
+		uid,
+		string(passwordHash),
+	)
+	if err != nil {
+		return err
+	}
+
+	return err
 }
 
 func (s *Service) generateToken(
+	ctx context.Context,
+	keyType string,
 	data string,
+	kid uuid.UUID,
 	ttl time.Duration,
-	tokenKeyName string,
 ) (string, error) {
 	tokenPrivateKey, err := s.keysRepository.GetPrivateKey(
-		tokenKeyName + keys.PrivateKeySuffix,
+		ctx,
+		kid,
+		keyType,
 	)
 	if err != nil {
 		s.logger.Sugar().Errorf("[ERROR] Failed to get private key: %v", err)
@@ -140,6 +152,7 @@ func (s *Service) generateToken(
 	}
 	token, err := s.tokenRepository.SignTokenWithClaims(
 		data,
+		kid,
 		ttl,
 		tokenPrivateKey,
 	)
@@ -151,80 +164,108 @@ func (s *Service) generateToken(
 }
 
 func (s *Service) Authenticate(
+	ctx context.Context,
 	email string,
 	password string,
-) (string, string, error) {
-	user, err := s.userRepository.GetUserByEmail(email)
+) (refreshToken string, accessToken string, err error) {
+	resp, err := s.userClient.RegisterUser(
+		ctx,
+		&protos.RegisterUserRequest{
+			Email: email,
+		},
+	)
 	if err != nil {
-		return "", "", err
+		return refreshToken, accessToken, err
+	}
+	uid, err := uuid.Parse(resp.User.Uuid)
+	if err != nil {
+		return refreshToken, accessToken, err
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
+	credentials, err := s.credentialsRepository.GetCredentials(
+		ctx,
+		uid,
+	)
 	if err != nil {
-		return "", "", err
+		return refreshToken, accessToken, err
 	}
 
-	refreshToken, err := s.generateToken(
-		user.Uuid.String(),
+	err = bcrypt.CompareHashAndPassword([]byte(credentials.Password), []byte(password))
+	if err != nil {
+		return refreshToken, accessToken, err
+	}
+
+	refreshToken, err = s.generateToken(
+		ctx,
+		keys.RefreshKeyType,
+		uid.String(),
+		s.refreshKid,
 		s.refreshTokenDuration,
-		s.refreshTokenKeyName,
 	)
 	if err != nil {
-		return "", "", err
+		return refreshToken, accessToken, err
 	}
 
-	accessToken, err := s.generateToken(
-		user.Uuid.String(),
+	accessToken, err = s.generateToken(
+		ctx,
+		keys.AccessKeyType,
+		uid.String(),
+		s.accessKid,
 		s.accessTokenDuration,
-		s.accessTokenKeyName,
 	)
 	if err != nil {
-		return refreshToken, "", err
+		return refreshToken, accessToken, err
 	}
 
 	return refreshToken, accessToken, nil
 }
 
-func (s *Service) Refresh(refreshToken string) (string, error) {
-	publicKeys, err := s.keysRepository.GetAllPublicKeys(
-		refreshKeyPairNamePrefix,
+func (s *Service) Refresh(
+	ctx context.Context,
+	refreshToken string,
+) (string, error) {
+	publicKey, err := s.keysRepository.GetPublicKey(
+		ctx,
+		s.refreshKid,
+		keys.RefreshKeyType,
 	)
 	if err != nil {
 		s.logger.Sugar().Errorf("[ERROR] Failed to get public keys: %v", err)
 		return "", fmt.Errorf("Could not validate refresh token")
 	}
 
-	for _, publicKey := range publicKeys {
-		data, err := s.tokenRepository.ValidateToken(refreshToken, publicKey)
-		if err == nil {
-			accessToken, err := s.generateToken(
-				data,
-				s.accessTokenDuration,
-				s.accessTokenKeyName,
-			)
-			if err != nil {
-				return "", err
-			}
-
-			return accessToken, nil
-		}
+	data, err := s.tokenRepository.ValidateToken(refreshToken, publicKey)
+	if err != nil {
+		return "", fmt.Errorf("Could not validate refresh token")
+	}
+	accessToken, err := s.generateToken(
+		ctx,
+		keys.AccessKeyType,
+		data,
+		s.accessKid,
+		s.accessTokenDuration,
+	)
+	if err != nil {
+		return "", err
 	}
 
-	return "", fmt.Errorf("Could not validate refresh token")
+	return accessToken, nil
+
 }
 
-func (s *Service) GetPublicKeys() ([]string, error) {
-	publicKeyStrings := make([]string, 0)
+func (s *Service) GetPublicKeys(ctx context.Context) (map[uuid.UUID]string, error) {
+	publicKeyStrings := make(map[uuid.UUID]string, 0)
 	// Only allow access to the public key for the access tokens
 	publicKeys, err := s.keysRepository.GetAllPublicKeys(
-		accessKeyPairNamePrefix,
+		ctx,
+		keys.AccessKeyType,
 	)
 	if err != nil {
 		s.logger.Sugar().Warnf("Failed to fetch public keys. Error: %v", err)
 		return publicKeyStrings, err
 	}
 
-	for _, publicKey := range publicKeys {
+	for kid, publicKey := range publicKeys {
 		publicKeyBytes, err := x509.MarshalPKIXPublicKey(publicKey)
 		if err != nil {
 			s.logger.Sugar().Warnf("Failed to marshal public key. Error: %v", err)
@@ -241,7 +282,7 @@ func (s *Service) GetPublicKeys() ([]string, error) {
 			continue
 		}
 
-		publicKeyStrings = append(publicKeyStrings, publicKeyBuffer.String())
+		publicKeyStrings[kid] = publicKeyBuffer.String()
 	}
 
 	return publicKeyStrings, nil

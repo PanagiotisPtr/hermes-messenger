@@ -3,10 +3,6 @@ import { decode, verify } from "jsonwebtoken";
 import { NextApiHandler, NextApiRequest, NextApiResponse } from "next"
 import { getPublicKeys } from "./publicKeys";
 
-export async function tokenIsValid(): Promise<boolean> {
-    return true
-}
-
 export interface AuthenticationContext {
     userUuid: string
 }

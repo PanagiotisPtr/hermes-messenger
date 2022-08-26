@@ -18,6 +18,7 @@ type Config struct {
 	RefreshTokenDuration      time.Duration
 	AccessTokenDuration       time.Duration
 	KeyPairGenerationInterval time.Duration
+	UserServiceAddress        string
 }
 
 // Provides the application config
@@ -32,6 +33,7 @@ func ProvideConfig() *Config {
 	refreshTokenDurationSeconds := utils.GetEnvVariableInt("REFRESH_TOKEN_EXP_SEC", secondsInDay)
 	accessTokenDurationSeconds := utils.GetEnvVariableInt("ACCESS_TOKEN_EXP_SEC", secondsInHour)
 	keyPairGenerationInterval := utils.GetEnvVariableInt("KEY_PAIR_GENERATION_INTERVAL", secondsInDay)
+	userServiceAddress := utils.GetEnvVariableString("USER_SERVICE_ADDR", "localhost:8080")
 
 	return &Config{
 		UUID:                      uuid.New(),
@@ -43,5 +45,6 @@ func ProvideConfig() *Config {
 		RefreshTokenDuration:      time.Second * time.Duration(refreshTokenDurationSeconds),
 		AccessTokenDuration:       time.Second * time.Duration(accessTokenDurationSeconds),
 		KeyPairGenerationInterval: time.Second * time.Duration(keyPairGenerationInterval),
+		UserServiceAddress:        userServiceAddress,
 	}
 }

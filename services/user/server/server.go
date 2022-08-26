@@ -66,5 +66,22 @@ func (us *UserServer) GetUser(
 	}
 	response.User = userToEntity(u)
 
-	return response, err
+	return response, nil
+}
+
+func (us *UserServer) GetUserByEmail(
+	ctx context.Context,
+	request *protos.GetUserByEmailRequest,
+) (*protos.GetUserByEmailResponse, error) {
+	response := &protos.GetUserByEmailResponse{
+		User: nil,
+	}
+
+	u, err := us.service.GetUserByEmail(ctx, request.Email)
+	if err != nil {
+		return response, err
+	}
+	response.User = userToEntity(u)
+
+	return response, nil
 }

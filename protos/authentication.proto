@@ -14,9 +14,7 @@ message RegisterRequest {
   string Password = 2;
 }
 
-message RegisterResponse {
-  bool success = 1;
-}
+message RegisterResponse {}
 
 message AuthenticateRequest {
   string Email = 1;
@@ -38,6 +36,11 @@ message RefreshResponse {
 
 message GetPublicKeysRequest {}
 
+message PublicKey {
+	string Uuid = 1;
+	string Value = 2;
+}
+
 message GetPublicKeysResponse {
-  repeated string PublicKeys = 1;
+  repeated PublicKey PublicKeys = 1;
 }

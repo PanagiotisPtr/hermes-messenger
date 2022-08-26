@@ -3,6 +3,7 @@ module github.com/panagiotisptr/hermes-messenger/user
 go 1.18
 
 require (
+	github.com/elastic/go-elasticsearch/v8 v8.4.0
 	github.com/go-redis/redis/v9 v9.0.0-beta.2
 	github.com/google/uuid v1.3.0
 	github.com/panagiotisptr/hermes-messenger/libs/utils v0.0.0
@@ -15,6 +16,7 @@ require (
 require (
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
+	github.com/elastic/elastic-transport-go/v8 v8.1.0 // indirect
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/pkg/errors v0.9.1 // indirect

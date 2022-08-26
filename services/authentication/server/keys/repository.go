@@ -1,14 +1,16 @@
 package keys
 
 import (
+	"context"
 	"crypto/rsa"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type Repository interface {
-	StoreKeyPair(string, KeyPair, time.Duration) error
-	GetPublicKey(string) (*rsa.PublicKey, error)
-	GetPrivateKey(string) (*rsa.PrivateKey, error)
-	GetAllPublicKeys(string) ([]*rsa.PublicKey, error)
-	GetAllPrivateKeys(string) ([]*rsa.PrivateKey, error)
+	StoreKeyPair(context.Context, KeyPair, time.Duration) error
+	GetPublicKey(context.Context, uuid.UUID, string) (*rsa.PublicKey, error)
+	GetPrivateKey(context.Context, uuid.UUID, string) (*rsa.PrivateKey, error)
+	GetAllPublicKeys(context.Context, string) (map[uuid.UUID]*rsa.PublicKey, error)
 }
