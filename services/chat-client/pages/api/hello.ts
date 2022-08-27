@@ -1,36 +1,41 @@
-import type { NextApiRequest, NextApiResponse } from 'next'
-import { credentials, ServiceError } from '@grpc/grpc-js';
-import { AuthenticationClient, GetPublicKeysResponse } from '../../grpc-clients/authentication'
-import { parse } from "cookie"
-import { withAuth } from '../../auth-utils/token';
+import { credentials } from '@grpc/grpc-js';
+import type { NextApiResponse } from 'next'
+import { NextApiRequestWithAuth, withAuth } from '../../auth-utils/token';
+import { GetUserResponse, UserClient } from '../../grpc-clients/user';
+import { defaultOptions } from '../../grpc-utils/options';
 
 type Data = {
   name: string
 }
 
 async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<Data>
+  req: NextApiRequestWithAuth,
+  res: NextApiResponse<Data | { error: string }>
 ) {
-  const cookieHeader = req.headers['cookie'] ?? ''
-  const cookies = parse(cookieHeader)
-  console.log(cookies)
-  const service = new AuthenticationClient('localhost:7777', credentials.createInsecure(), {
-    'grpc.keepalive_time_ms': 120000,
-    'grpc.http2.min_time_between_pings_ms': 120000,
-    'grpc.keepalive_timeout_ms': 20000,
-    'grpc.http2.max_pings_without_data': 0,
-    'grpc.keepalive_permit_without_calls': 1,
-  });
+  const userUuid = req.context?.userUuid ?? ""
+  if (!userUuid) {
+    res.status(401).json({ error: "Unauthorised" })
+    return
+  }
 
-  service.getPublicKeys({}, (err: ServiceError | null, res: GetPublicKeysResponse) => {
-    if (err) {
-      console.log('Error: ', err)
-    }
+  const service = new UserClient(
+    process.env.USER_SERVICE_ADDR ?? "",
+    credentials.createInsecure(),
+    defaultOptions,
+  )
 
-    console.log(res.PublicKeys)
-  })
-  res.status(200).json({ name: 'John Doe' })
+  const response = await new Promise<GetUserResponse>((res, rej) =>
+    service.getUser({
+      Uuid: userUuid,
+    }, (err, resp) => err ? rej(err) : res(resp))
+  )
+  const user = response.User
+  if (!user) {
+    res.status(401).json({ error: "Unauthorised" })
+    return
+  }
+
+  res.status(200).json({ name: user.Email })
 }
 
 export default withAuth(handler)

@@ -168,9 +168,9 @@ func (s *Service) Authenticate(
 	email string,
 	password string,
 ) (refreshToken string, accessToken string, err error) {
-	resp, err := s.userClient.RegisterUser(
+	resp, err := s.userClient.GetUserByEmail(
 		ctx,
-		&protos.RegisterUserRequest{
+		&protos.GetUserByEmailRequest{
 			Email: email,
 		},
 	)

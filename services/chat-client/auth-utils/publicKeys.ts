@@ -8,10 +8,12 @@ const service = new AuthenticationClient(
     defaultOptions,
 )
 
-let keys: string[] = []
+type KeyMap = { [key: string]: string }
 
-export async function getPublicKeys(): Promise<string[]> {
-    if (keys.length) {
+let keys: KeyMap = {}
+
+export async function getPublicKeys(): Promise<KeyMap> {
+    if (Object.keys(keys).length) {
         return keys
     }
 
@@ -19,9 +21,9 @@ export async function getPublicKeys(): Promise<string[]> {
         service.getPublicKeys({}, (err, resp) => err ? rej(err) : res(resp))
     )
 
-    // todo - add KID
-    // todo - set expiry on keys when service exits
-    keys = response.PublicKeys
+    for (const key of response.PublicKeys) {
+        keys[key.Uuid] = key.Value
+    }
 
     return keys
 }

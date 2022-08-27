@@ -7,7 +7,7 @@ export interface AuthenticationContext {
     userUuid: string
 }
 
-interface NextApiRequestWithAuth extends NextApiRequest {
+export interface NextApiRequestWithAuth extends NextApiRequest {
     context?: AuthenticationContext
 }
 
@@ -29,8 +29,8 @@ export function withAuth<T>(handler: NextApiHandlerWithAuth<T>): NextApiHandler<
             res.status(401).json({ error: "Malformed authentication token" })
             return
         }
-        const { dat, exp } = headers
-        if (!dat || !exp) {
+        const { dat, exp, kid } = headers
+        if (!dat || !exp || !kid) {
             res.status(401).json({ error: "Malformed authentication token" })
             return
         }
@@ -39,23 +39,17 @@ export function withAuth<T>(handler: NextApiHandlerWithAuth<T>): NextApiHandler<
             return
         }
         const keys = await getPublicKeys()
-        let isVerified = false
-        for (const key of keys) {
-            const formattedKey = key.replaceAll(" RSA ", " ")
-            const result = await new Promise<boolean>((res, _) => {
-                verify(accessToken, formattedKey, (err, _) => {
-                    if (err) {
-                        res(false)
-                    }
-                    res(true)
-                })
+        const key = keys[kid]
+        const formattedKey = key.replaceAll(" RSA ", " ")
+        const result = await new Promise<boolean>((res, _) => {
+            verify(accessToken, formattedKey, (err, _) => {
+                if (err) {
+                    res(false)
+                }
+                res(true)
             })
-            if (result) {
-                isVerified = true
-                break
-            }
-        }
-        if (!isVerified) {
+        })
+        if (!result) {
             res.status(401).json({ error: "Invalid token" })
             return
         }

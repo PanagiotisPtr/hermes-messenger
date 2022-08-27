@@ -91,7 +91,7 @@ func (rr *RedisRepository) GetPrivateKey(
 	kid uuid.UUID,
 	keyType string,
 ) (*rsa.PrivateKey, error) {
-	keyName := KeysRepoKeyPrefix + ":" + RefreshKeyType + ":" + kid.String() + ":" + PrivateKeySuffix
+	keyName := KeysRepoKeyPrefix + ":" + keyType + ":" + kid.String() + ":" + PrivateKeySuffix
 	privateKeyString, err := rr.redisClient.Get(ctx, keyName).Result()
 	if err != nil {
 		return nil, fmt.Errorf("Could not find private key pair under the name %s", keyName)

@@ -13,8 +13,6 @@ const Login: NextPage = () => {
                 password
             })
         }).then(res => res.json())
-
-        console.log(resp)
     }
 
     return (
