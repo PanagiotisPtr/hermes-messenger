@@ -14,10 +14,6 @@ import (
 	"go.uber.org/zap"
 )
 
-const (
-	MessageRepoKeyPrefix = "repository:message"
-)
-
 type ESRepository struct {
 	logger      *zap.Logger
 	redisClient *redis.Client
@@ -34,10 +30,6 @@ func ProvideESRepository(
 		redisClient: rc,
 		es:          es,
 	}
-}
-
-func keyForUUID(id uuid.UUID) string {
-	return MessageRepoKeyPrefix + ":" + id.String()
 }
 
 func (r *ESRepository) SaveMessage(
@@ -120,7 +112,6 @@ func (r *ESRepository) GetMessages(
 		r.es.Search.WithIndex("messages"),
 		r.es.Search.WithBody(&buf),
 		r.es.Search.WithTrackTotalHits(true),
-		r.es.Search.WithPretty(),
 	)
 	if err != nil {
 		return messages, err

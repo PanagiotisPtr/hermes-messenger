@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -34,4 +35,20 @@ func (s *Service) GetUser(
 	id uuid.UUID,
 ) (*User, error) {
 	return s.userRepo.GetUser(ctx, id)
+}
+
+func (s *Service) GetUserByEmail(
+	ctx context.Context,
+	email string,
+) (*User, error) {
+	u, err := s.userRepo.GetUserByEmail(ctx, email)
+	if err != nil {
+		return nil, err
+	}
+
+	if u == nil {
+		return nil, fmt.Errorf("Could not find user with email \"%s\"", email)
+	}
+
+	return u, nil
 }

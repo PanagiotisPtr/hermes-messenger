@@ -25,18 +25,24 @@ func (as *AuthenticationServer) Register(
 	ctx context.Context,
 	request *protos.RegisterRequest,
 ) (*protos.RegisterResponse, error) {
-	success, err := as.service.Register(request.Email, request.Password)
+	err := as.service.Register(
+		ctx,
+		request.Email,
+		request.Password,
+	)
 
-	return &protos.RegisterResponse{
-		Success: success,
-	}, err
+	return &protos.RegisterResponse{}, err
 }
 
 func (as *AuthenticationServer) Authenticate(
 	ctx context.Context,
 	request *protos.AuthenticateRequest,
 ) (*protos.AuthenticateResponse, error) {
-	refreshToken, accessToken, err := as.service.Authenticate(request.Email, request.Password)
+	refreshToken, accessToken, err := as.service.Authenticate(
+		ctx,
+		request.Email,
+		request.Password,
+	)
 
 	return &protos.AuthenticateResponse{
 		RefreshToken: refreshToken,
@@ -48,7 +54,10 @@ func (as *AuthenticationServer) Refresh(
 	ctx context.Context,
 	request *protos.RefreshRequest,
 ) (*protos.RefreshResponse, error) {
-	accessToken, err := as.service.Refresh(request.RefreshToken)
+	accessToken, err := as.service.Refresh(
+		ctx,
+		request.RefreshToken,
+	)
 
 	return &protos.RefreshResponse{
 		AccessToken: accessToken,
@@ -59,9 +68,24 @@ func (as *AuthenticationServer) GetPublicKeys(
 	ctx context.Context,
 	request *protos.GetPublicKeysRequest,
 ) (*protos.GetPublicKeysResponse, error) {
-	publicKeys, err := as.service.GetPublicKeys()
+	publicKeyEntities := make([]*protos.PublicKey, 0)
+	publicKeys, err := as.service.GetPublicKeys(ctx)
+	if err != nil {
+		return &protos.GetPublicKeysResponse{
+			PublicKeys: publicKeyEntities,
+		}, err
+	}
 
+	for kid, keyValue := range publicKeys {
+		publicKeyEntities = append(
+			publicKeyEntities,
+			&protos.PublicKey{
+				Uuid:  kid.String(),
+				Value: keyValue,
+			},
+		)
+	}
 	return &protos.GetPublicKeysResponse{
-		PublicKeys: publicKeys,
-	}, err
+		PublicKeys: publicKeyEntities,
+	}, nil
 }

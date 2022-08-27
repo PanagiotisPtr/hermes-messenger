@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
@@ -21,6 +22,7 @@ func ProvideTokenRepository(logger *zap.Logger) Repository {
 
 func (sr *Repository) SignTokenWithClaims(
 	data string,
+	kid uuid.UUID,
 	ttl time.Duration,
 	privateKey *rsa.PrivateKey,
 ) (string, error) {
@@ -28,6 +30,7 @@ func (sr *Repository) SignTokenWithClaims(
 
 	claims := make(jwt.MapClaims)
 	claims["dat"] = data
+	claims["kid"] = kid.String()
 	claims["exp"] = now.Add(ttl).Unix()
 	claims["iat"] = now.Unix()
 	claims["nbf"] = now.Unix()

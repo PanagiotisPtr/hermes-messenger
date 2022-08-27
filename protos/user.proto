@@ -5,6 +5,7 @@ option go_package = "github.com/panagiotisptr/hermes-messenger/user/protos";
 service User {
   rpc RegisterUser(RegisterUserRequest) returns (RegisterUserResponse);
   rpc GetUser(GetUserRequest) returns (GetUserResponse);
+  rpc GetUserByEmail(GetUserByEmailRequest) returns (GetUserByEmailResponse);
 }
 
 message UserEntity {
@@ -26,4 +27,12 @@ message GetUserRequest {
 
 message GetUserResponse {
   UserEntity User = 1;
+}
+
+message GetUserByEmailRequest {
+	string Email = 1;
+}
+
+message GetUserByEmailResponse {
+	UserEntity User = 1;
 }

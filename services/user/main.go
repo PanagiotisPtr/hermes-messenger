@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 
+	elasticsearch "github.com/elastic/go-elasticsearch/v8"
 	"github.com/go-redis/redis/v9"
 	"github.com/panagiotisptr/hermes-messenger/protos"
 	"github.com/panagiotisptr/hermes-messenger/user/config"
@@ -31,6 +32,10 @@ func ProvideGRPCServer(
 	}
 
 	return gs, nil
+}
+
+func ProvideElasticsearchClient(cfg *config.Config) (*elasticsearch.Client, error) {
+	return elasticsearch.NewClient(cfg.ESConfig)
 }
 
 func ProvideRedisClient(cfg *config.Config) *redis.Client {
@@ -74,12 +79,13 @@ func ProvideLogger() *zap.Logger {
 func main() {
 	app := fx.New(
 		fx.Provide(
+			ProvideElasticsearchClient,
 			ProvideRedisClient,
 			ProvideLogger,
 			config.ProvideConfig,
 			server.ProvideUserServer,
 			user.ProvideUserService,
-			user.ProvideRedisRepository,
+			user.ProvideESRepository,
 			ProvideGRPCServer,
 		),
 		fx.Invoke(Bootstrap),
