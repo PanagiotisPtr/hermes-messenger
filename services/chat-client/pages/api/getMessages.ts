@@ -46,7 +46,7 @@ async function handler(
             messagingClient.getMessages({
                 From: userUuid,
                 To: body.to,
-                Start: 0,
+                Start: Math.floor(Date.now() / 1000) - 60 * 5,
                 End: Math.floor(Date.now() / 1000),
             }, (err, resp) => err ? rej(err) : res(resp))
         )

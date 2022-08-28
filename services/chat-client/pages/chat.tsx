@@ -2,6 +2,7 @@ import type { NextPage } from "next"
 import { useEffect, useState } from "react"
 import styles from "../styles/Login.module.css"
 import Link from "next/link"
+import { Message } from "../grpc-clients/messaging"
 
 interface entity {
     uuid: string
@@ -19,10 +20,14 @@ const Chat: NextPage<Props> = ({ friendUuid }) => {
     const [friend, setFriend] = useState<entity>({ uuid: friendUuid, email: "" })
     const [addFriendField, setAddFriendField] = useState("")
 
+    const addMessage = (content: string) => {
+        setMessages([...messages, content])
+    }
+
     useEffect(() => {
         fetch('/api/getFriends')
             .then(res => res.json())
-            .then(res => { setFriends(res.friends); console.log(friends); })
+            .then(res => { setFriends(res.friends); })
 
         if (friend.uuid) {
             fetch("/api/getMessages", {
@@ -36,6 +41,7 @@ const Chat: NextPage<Props> = ({ friendUuid }) => {
                 }
             })
         }
+
     }, [])
 
     useEffect(() => {
@@ -44,6 +50,13 @@ const Chat: NextPage<Props> = ({ friendUuid }) => {
             setFriend(f)
         }
     }, [friends, friendUuid])
+
+    if (typeof window !== 'undefined') {
+        window.addEventListener("message-event", (e: any) => {
+            const msg: Message = JSON.parse(e.detail)
+            addMessage(msg.Content)
+        })
+    }
 
     const addFriend = async (email: string) => {
         const resp = await fetch("/api/addFriend", {
@@ -87,7 +100,7 @@ const Chat: NextPage<Props> = ({ friendUuid }) => {
                 <div className={styles.colContainer}>
                     <span><b>{friend.email}</b></span>
                     {messages.map((m, i) => <span key={i}>{m}</span>)}
-                    <form onSubmit={e => { setMessages([...messages, message]); sendMessage(message); setMessage(""); e.preventDefault() }}>
+                    <form onSubmit={e => { sendMessage(message); setMessage(""); e.preventDefault() }}>
                         <input type="text" value={message} onChange={e => setMessage(e.target.value)} placeholder="Say something" />
                     </form>
                 </div>
