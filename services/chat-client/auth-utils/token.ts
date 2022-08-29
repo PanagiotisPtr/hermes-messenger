@@ -13,44 +13,48 @@ export interface NextApiRequestWithAuth extends NextApiRequest {
 
 type NextApiHandlerWithAuth<T> = (req: NextApiRequestWithAuth, res: NextApiResponse<T>) => unknown | Promise<unknown>;
 
+export async function tokenIsValid(token: string): Promise<[string, Error | null]> {
+    if (!token) {
+        return ["", new Error("No token provided")]
+    }
+
+    const headers = decode(token)
+    if (typeof headers == 'string' || headers == null) {
+        return ["", new Error("Malformed authentication token")]
+    }
+    const { dat, exp, kid } = headers
+    if (!dat || !exp || !kid) {
+        return ["", new Error("Malformed authentication token")]
+    }
+    if (exp * 1000 < Date.now()) {
+        return ["", new Error("Authentication token has expired")]
+    }
+    const keys = await getPublicKeys()
+    const key = keys[kid]
+    const formattedKey = key.replaceAll(" RSA ", " ")
+    const result = await new Promise<boolean>((res, _) => {
+        verify(token, formattedKey, (err, _) => {
+            if (err) {
+                res(false)
+            }
+            res(true)
+        })
+    })
+    if (!result) {
+        return ["", new Error("Invalid token")]
+    }
+
+    return [dat, null]
+}
+
 export function withAuth<T>(handler: NextApiHandlerWithAuth<T>): NextApiHandler<T | { error: string }> {
     return async function (req: NextApiRequest, res: NextApiResponse<T | { error: string }>) {
-
         const cookies = parse(req.headers.cookie ?? '')
         const { accessToken } = cookies
 
-        if (!accessToken) {
-            res.status(401).json({ error: "Unauthorised" })
-            return
-        }
-
-        const headers = decode(accessToken)
-        if (typeof headers == 'string' || headers == null) {
-            res.status(401).json({ error: "Malformed authentication token" })
-            return
-        }
-        const { dat, exp, kid } = headers
-        if (!dat || !exp || !kid) {
-            res.status(401).json({ error: "Malformed authentication token" })
-            return
-        }
-        if (exp * 1000 < Date.now()) {
-            res.status(401).json({ error: "Authentication token has expired" })
-            return
-        }
-        const keys = await getPublicKeys()
-        const key = keys[kid]
-        const formattedKey = key.replaceAll(" RSA ", " ")
-        const result = await new Promise<boolean>((res, _) => {
-            verify(accessToken, formattedKey, (err, _) => {
-                if (err) {
-                    res(false)
-                }
-                res(true)
-            })
-        })
-        if (!result) {
-            res.status(401).json({ error: "Invalid token" })
+        const [dat, err] = await tokenIsValid(accessToken)
+        if (err != null) {
+            res.status(401).json({ error: err.message })
             return
         }
 
