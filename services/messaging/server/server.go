@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/panagiotisptr/hermes-messenger/messaging/server/messaging"
@@ -72,8 +71,8 @@ func (m *MessagingServer) GetMessages(
 		ctx,
 		fromUuid,
 		toUuid,
-		time.Unix(request.Start, 0),
-		time.Unix(request.End, 0),
+		request.Size,
+		request.Offset,
 	)
 
 	for _, m := range ms {

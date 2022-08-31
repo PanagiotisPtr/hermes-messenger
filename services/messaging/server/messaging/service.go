@@ -3,8 +3,6 @@ package messaging
 import (
 	"context"
 	"fmt"
-	"sort"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/panagiotisptr/hermes-messenger/protos"
@@ -81,65 +79,19 @@ func (s *Service) GetMessagesBetweenUsers(
 	ctx context.Context,
 	from uuid.UUID,
 	to uuid.UUID,
-	start time.Time,
-	end time.Time,
+	size int64,
+	offset int64,
 ) ([]*Message, error) {
 	ms := make([]*Message, 0)
 	if err := s.usersAreFriends(ctx, from, to); err != nil {
 		return ms, err
 	}
-	left, err := s.messageRepo.GetMessages(
+
+	return s.messageRepo.GetMessages(
 		ctx,
 		from,
 		to,
-		start,
-		end,
+		size,
+		offset,
 	)
-	if err != nil {
-		return ms, err
-	}
-
-	right, err := s.messageRepo.GetMessages(
-		ctx,
-		to,
-		from,
-		start,
-		end,
-	)
-	if err != nil {
-		return ms, err
-	}
-
-	// Probably don't need to sort the results here
-	sort.Slice(left, func(i, j int) bool {
-		return left[i].Timestamp < left[j].Timestamp
-	})
-
-	sort.Slice(right, func(i, j int) bool {
-		return right[i].Timestamp < right[j].Timestamp
-	})
-
-	i := 0
-	j := 0
-	for i < len(left) && j < len(right) {
-		if left[i].Timestamp < right[j].Timestamp {
-			ms = append(ms, left[i])
-			i++
-		} else {
-			ms = append(ms, right[j])
-			j++
-		}
-	}
-
-	for i < len(left) {
-		ms = append(ms, left[i])
-		i++
-	}
-
-	for j < len(right) {
-		ms = append(ms, right[j])
-		j++
-	}
-
-	return ms, nil
 }
