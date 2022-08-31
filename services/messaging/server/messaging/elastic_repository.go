@@ -1,17 +1,21 @@
 package messaging
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	elasticsearch "github.com/elastic/go-elasticsearch/v8"
-	"github.com/elastic/go-elasticsearch/v8/esapi"
 	redis "github.com/go-redis/redis/v9"
 	"github.com/google/uuid"
+	"github.com/panagiotisptr/hermes-messenger/libs/utils/esutils"
 	"go.uber.org/zap"
+)
+
+const (
+	MessagesIndex = "messages"
 )
 
 type ESRepository struct {
@@ -47,28 +51,23 @@ func (r *ESRepository) SaveMessage(
 		Content:   content,
 	}
 
+	err := esutils.StoreDocument(
+		ctx,
+		r.es,
+		MessagesIndex,
+		docId.String(),
+		m,
+		true,
+	)
+	if err != nil {
+		return err
+	}
+
 	b, err := json.Marshal(m)
 	if err != nil {
-		return err
+		r.logger.Sugar().Warnf("Failed to publish message to redis channel: %s", err.Error())
+		return nil
 	}
-
-	req := esapi.IndexRequest{
-		Index:      "messages",
-		DocumentID: docId.String(),
-		Body:       bytes.NewReader(b),
-		Refresh:    "true",
-	}
-
-	res, err := req.Do(ctx, r.es)
-	if err != nil {
-		return err
-	}
-	defer res.Body.Close()
-
-	if res.IsError() {
-		return fmt.Errorf("[%s] Error indexing document ID=%s", res.Status(), docId)
-	}
-
 	err = r.redisClient.Publish(ctx, "messages", string(b)).Err()
 	if err != nil {
 		r.logger.Sugar().Warnf("Failed to publish message to redis channel: %s", err.Error())
@@ -81,96 +80,45 @@ func (r *ESRepository) GetMessages(
 	ctx context.Context,
 	from uuid.UUID,
 	to uuid.UUID,
-	start time.Time,
-	end time.Time,
+	size int64,
+	offset int64,
 ) ([]*Message, error) {
-	messages := make([]*Message, 0)
-	var buf bytes.Buffer
-	q := map[string]interface{}{
-		"query": map[string]interface{}{
-			"bool": map[string]interface{}{
-				"must": []interface{}{
-					map[string]interface{}{"term": map[string]interface{}{"From.keyword": from}},
-					map[string]interface{}{"term": map[string]interface{}{"To.keyword": to}},
-					map[string]interface{}{"range": map[string]interface{}{
-						"Timestamp": map[string]interface{}{
-							"gte": start.Unix(),
-							"lte": end.Unix(),
-						},
-					}},
-				},
-			},
-		},
-	}
-	if err := json.NewEncoder(&buf).Encode(q); err != nil {
-		return messages, err
-	}
+	q := fmt.Sprintf(`{
+	    "from": %d,
+	    "size": %d,
+	    "sort": {
+	        "Timestamp": {
+	            "order": "desc"
+	        }
+	    },
+	    "query": {
+	        "bool": {
+	            "should": [
+	                {
+	                    "bool": {
+	                        "must": [
+	                            { "term": { "From.keyword": "%s" } },
+	                            { "term": { "To.keyword": "%s" } }
+	                        ]
+	                    }
+	                },
+	                {
+	                    "bool": {
+	                        "must": [
+	                            { "term": { "From.keyword": "%s" } },
+	                            { "term": { "To.keyword": "%s" } }
+	                        ]
+	                    }
+	                }
+	            ]
+	        }
+	    }
+	}`, offset, size, from, to, to, from)
 
-	// Perform the search request.
-	res, err := r.es.Search(
-		r.es.Search.WithContext(context.Background()),
-		r.es.Search.WithIndex("messages"),
-		r.es.Search.WithBody(&buf),
-		r.es.Search.WithTrackTotalHits(true),
+	return esutils.GetResults[*Message](
+		r.es,
+		r.es.Search.WithContext(ctx),
+		r.es.Search.WithIndex(MessagesIndex),
+		r.es.Search.WithBody(strings.NewReader(q)),
 	)
-	if err != nil {
-		return messages, err
-	}
-	defer res.Body.Close()
-
-	if res.IsError() {
-		var e map[string]interface{}
-		if err := json.NewDecoder(res.Body).Decode(&e); err != nil {
-			return messages, fmt.Errorf(
-				`failed to perform search.
-				Error: can't display error:
-				error parsing the response body: %s`,
-				err,
-			)
-		} else {
-			// Print the response status and error information.
-			return messages, fmt.Errorf("[%s] %s: %s",
-				res.Status(),
-				e["error"].(map[string]interface{})["type"],
-				e["error"].(map[string]interface{})["reason"],
-			)
-		}
-	}
-
-	var rp map[string]interface{}
-	if err := json.NewDecoder(res.Body).Decode(&rp); err != nil {
-		return messages, fmt.Errorf("Error parsing the response body: %s", err)
-	}
-
-	// Print the ID and document source for each hit.
-	for _, hit := range rp["hits"].(map[string]interface{})["hits"].([]interface{}) {
-		source := hit.(map[string]interface{})["_source"]
-
-		messageUuid, err := uuid.Parse(source.(map[string]interface{})["Uuid"].(string))
-		if err != nil {
-			r.logger.Sugar().Error(err)
-			continue
-		}
-		fromUuid, err := uuid.Parse(source.(map[string]interface{})["From"].(string))
-		if err != nil {
-			r.logger.Sugar().Error(err)
-			continue
-		}
-		toUuid, err := uuid.Parse(source.(map[string]interface{})["To"].(string))
-		if err != nil {
-			r.logger.Sugar().Error(err)
-			continue
-		}
-		timestamp := int64(source.(map[string]interface{})["Timestamp"].(float64))
-		content := source.(map[string]interface{})["Content"].(string)
-		messages = append(messages, &Message{
-			Uuid:      messageUuid,
-			From:      fromUuid,
-			To:        toUuid,
-			Timestamp: timestamp,
-			Content:   content,
-		})
-	}
-
-	return messages, nil
 }

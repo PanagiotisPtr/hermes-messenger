@@ -37,7 +37,7 @@ const Chat: NextPage<Props> = ({ friendUuid }) => {
                 })
             }).then(res => res.json()).then((res) => {
                 if (res.messages) {
-                    setMessages(res.messages.map((m: any) => m.content))
+                    setMessages(res.messages.reverse().map((m: any) => m.content))
                 }
             })
         }

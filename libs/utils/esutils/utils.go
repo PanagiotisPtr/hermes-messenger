@@ -53,8 +53,8 @@ type ESError struct {
 
 // StoreDocument stores a single document on an ES index
 func StoreDocument(
-	es *elasticsearch.Client,
 	ctx context.Context,
+	es *elasticsearch.Client,
 	index string,
 	documentID string,
 	document interface{},

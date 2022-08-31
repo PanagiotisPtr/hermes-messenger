@@ -18,8 +18,8 @@ message SendMessageResponse {}
 message GetMessagesRequest {
   string From = 1;
   string To = 2;
-  int64 Start = 3;
-  int64 End = 4;
+  int64 Size = 3;
+  int64 Offset = 4;
 }
 
 message Message {

@@ -52,8 +52,8 @@ func (r *ESRepository) AddUser(
 		Email: email,
 	}
 	err = esutils.StoreDocument(
-		r.es,
 		ctx,
+		r.es,
 		UsersIndex,
 		docId.String(),
 		u,
