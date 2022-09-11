@@ -1,9 +1,13 @@
 apiVersion: kibana.k8s.elastic.co/v1
 kind: Kibana
 metadata:
-  name: kb-user
+  name: user-kibana
 spec:
   version: 8.4.1
+  http:
+    tls:
+      selfSignedCertificate:
+        disabled: true
   count: 1
   elasticsearchRef:
-    name: es-user
+    name: user-elasticsearch
