@@ -1,7 +1,6 @@
 package config
 
 import (
-	"io/ioutil"
 	"strings"
 
 	elasticsearch "github.com/elastic/go-elasticsearch/v8"
@@ -18,7 +17,7 @@ type Config struct {
 }
 
 // Provides the application config
-func ProvideConfig() (*Config, error) {
+func ProvideConfig() *Config {
 	listenPort := utils.GetEnvVariableInt("LISTEN_PORT", 80)
 	redisAddress := utils.GetEnvVariableString("REDIS_ADDRESS", "localhost:6379")
 	redisPassword := utils.GetEnvVariableString("REDIS_PASSWORD", "")
@@ -27,13 +26,6 @@ func ProvideConfig() (*Config, error) {
 	esAddresses := utils.GetEnvVariableString("ES_ADDRESSES", "https://localhost:8200")
 	esUsername := utils.GetEnvVariableString("ES_USERNAME", "elastic")
 	esPassword := utils.GetEnvVariableString("ES_PASSWORD", "")
-	esCertPath := utils.GetEnvVariableString("ES_CERT_PATH", "config/certs/http_ca.crt")
-	esCertFingerprint := utils.GetEnvVariableString("ES_CERT_FINGERPRINT", "")
-
-	esCert, err := ioutil.ReadFile(esCertPath)
-	if err != nil {
-		return nil, err
-	}
 
 	return &Config{
 		ListenPort:     listenPort,
@@ -44,11 +36,9 @@ func ProvideConfig() (*Config, error) {
 			DB:       redisDatabase,
 		},
 		ESConfig: elasticsearch.Config{
-			Addresses:              strings.Split(esAddresses, ","),
-			Username:               esUsername,
-			Password:               esPassword,
-			CACert:                 esCert,
-			CertificateFingerprint: esCertFingerprint,
+			Addresses: strings.Split(esAddresses, ","),
+			Username:  esUsername,
+			Password:  esPassword,
 		},
-	}, nil
+	}
 }
