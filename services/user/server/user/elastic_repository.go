@@ -23,11 +23,34 @@ type ESRepository struct {
 func ProvideESRepository(
 	logger *zap.Logger,
 	es *elasticsearch.Client,
-) Repository {
-	return &ESRepository{
+) (Repository, error) {
+	r := &ESRepository{
 		logger: logger,
 		es:     es,
 	}
+
+	return r, r.initIndexes()
+}
+
+func (r *ESRepository) initIndexes() error {
+	res, err := r.es.Indices.Exists([]string{UsersIndex})
+	if err != nil {
+		return err
+	}
+
+	if res.StatusCode == 200 {
+		return nil
+	}
+
+	res, err = r.es.Indices.Create(UsersIndex)
+	if err != nil {
+		return err
+	}
+	if res.IsError() {
+		return fmt.Errorf("failed to create users index: %s", res.String())
+	}
+
+	return nil
 }
 
 func (r *ESRepository) AddUser(
