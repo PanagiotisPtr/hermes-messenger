@@ -14,10 +14,10 @@ WORKDIR $GOPATH/github.com/panagiotisptr/hermes-messenger
 
 RUN make protos-go
 
-WORKDIR $GOPATH/github.com/panagiotisptr/hermes-messenger/services/user
+WORKDIR $GOPATH/github.com/panagiotisptr/hermes-messenger/services/messaging
 
 RUN go mod tidy
 
 RUN go build . 
 
-ENTRYPOINT [ "./user" ]
+ENTRYPOINT [ "./messaging" ]
