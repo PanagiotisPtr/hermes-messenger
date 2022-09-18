@@ -1,7 +1,6 @@
 package config
 
 import (
-	"io/ioutil"
 	"strings"
 
 	elasticsearch "github.com/elastic/go-elasticsearch/v8"
@@ -19,39 +18,30 @@ type Config struct {
 }
 
 // Provides the application config
-func ProvideConfig() (*Config, error) {
+func ProvideConfig() *Config {
 	listenPort := utils.GetEnvVariableInt("LISTEN_PORT", 80)
 	friendsServiceAddres := utils.GetEnvVariableString("FRIENDS_SERVICE_ADDR", "localhost:8080")
 	esAddresses := utils.GetEnvVariableString("ES_ADDRESSES", "https://localhost:8200")
 	esUsername := utils.GetEnvVariableString("ES_USERNAME", "elastic")
 	esPassword := utils.GetEnvVariableString("ES_PASSWORD", "")
-	esCertPath := utils.GetEnvVariableString("ES_CERT_PATH", "config/certs/http_ca.crt")
-	esCertFingerprint := utils.GetEnvVariableString("ES_CERT_FINGERPRINT", "")
 	redisAddress := utils.GetEnvVariableString("REDIS_ADDRESS", "localhost:6379")
 	redisPassword := utils.GetEnvVariableString("REDIS_PASSWORD", "")
 	redisDatabase := utils.GetEnvVariableInt("REDIS_DB", 0)
 	grpcReflection := utils.GetEnvVariableBool("GRPC_REFLECTION", false)
-
-	esCert, err := ioutil.ReadFile(esCertPath)
-	if err != nil {
-		return nil, err
-	}
 
 	return &Config{
 		ListenPort:            listenPort,
 		GRPCReflection:        grpcReflection,
 		FriendsServiceAddress: friendsServiceAddres,
 		ESConfig: elasticsearch.Config{
-			Addresses:              strings.Split(esAddresses, ","),
-			Username:               esUsername,
-			Password:               esPassword,
-			CACert:                 esCert,
-			CertificateFingerprint: esCertFingerprint,
+			Addresses: strings.Split(esAddresses, ","),
+			Username:  esUsername,
+			Password:  esPassword,
 		},
 		Redis: &redis.Options{
 			Addr:     redisAddress,
 			Password: redisPassword,
 			DB:       redisDatabase,
 		},
-	}, nil
+	}
 }

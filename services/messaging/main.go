@@ -49,7 +49,7 @@ func Bootstrap(
 	cfg *config.Config,
 	logger *zap.Logger,
 ) {
-	logger.Sugar().Info("Starting user service")
+	logger.Sugar().Info("Starting messaging service")
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
 			logger.Sugar().Info("Starting GRPC server.")

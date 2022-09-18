@@ -30,8 +30,6 @@ require (
 	google.golang.org/protobuf v1.28.0 // indirect
 )
 
-replace github.com/panagiotisptr/hermes-messenger/libs/service v0.0.0 => ../../libs/service
-
 replace github.com/panagiotisptr/hermes-messenger/libs/utils v0.0.0 => ../../libs/utils
 
 replace github.com/panagiotisptr/hermes-messenger/protos v0.0.0 => ../../protos

@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: messaging-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: messaging-service
+  template:
+    metadata:
+      labels:
+        app: messaging-service
+    spec:
+      containers:
+      - name: messaging-deployment
+        image: panagiotisptr/messaging
+        ports:
+          - containerPort: 80
+        env:
+          - name: LISTEN_PORT
+            value: "80"
+          - name: FRIENDS_SERVICE_ADDR
+            value: "friends-service"
+          - name: REDIS_ADDRESS
+            value: "messaging-redis-master:6379"
+          - name: REDIS_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: messaging-redis
+                key: redis-password
+                optional: false
+          - name: REDIS_DB
+            value: "0"
+          - name: GRPC_REFLECTION
+            value: "true"
+          - name: ES_ADDRESSES
+            value: "http://messaging-elasticsearch-es-http:9200"
+          - name: ES_USERNAME
+            value: "elastic"
+          - name: ES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: messaging-elasticsearch-es-elastic-user
+                key: elastic
+                optional: false
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: messaging-service
+spec:
+  ports:
+  - name: http
+    port: 80
+    targetPort: 80
+  selector:
+    app: messaging-service
