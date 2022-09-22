@@ -7,10 +7,13 @@ import (
 
 	elasticsearch "github.com/elastic/go-elasticsearch/v8"
 	"github.com/go-redis/redis/v9"
+	"github.com/panagiotisptr/hermes-messenger/libs/utils/mongoutils"
 	"github.com/panagiotisptr/hermes-messenger/protos"
 	"github.com/panagiotisptr/hermes-messenger/user/config"
 	"github.com/panagiotisptr/hermes-messenger/user/server"
 	"github.com/panagiotisptr/hermes-messenger/user/server/user"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxevent"
 	"go.uber.org/zap"
@@ -40,6 +43,15 @@ func ProvideElasticsearchClient(cfg *config.Config) (*elasticsearch.Client, erro
 
 func ProvideRedisClient(cfg *config.Config) *redis.Client {
 	return redis.NewClient(cfg.Redis)
+}
+
+func ProvideMongoClient(ctx context.Context, cfg *config.Config) (*mongo.Client, error) {
+	return mongo.Connect(
+		ctx,
+		mongoutils.SetRegistryForUuids(
+			options.Client().ApplyURI(cfg.MongoUri),
+		),
+	)
 }
 
 // Bootstraps the application

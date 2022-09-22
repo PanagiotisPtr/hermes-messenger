@@ -14,6 +14,7 @@ type Config struct {
 	GRPCReflection bool
 	Redis          *redis.Options
 	ESConfig       elasticsearch.Config
+	MongoUri       string
 }
 
 // Provides the application config
@@ -23,9 +24,8 @@ func ProvideConfig() *Config {
 	redisPassword := utils.GetEnvVariableString("REDIS_PASSWORD", "")
 	redisDatabase := utils.GetEnvVariableInt("REDIS_DB", 0)
 	grpcReflection := utils.GetEnvVariableBool("GRPC_REFLECTION", false)
-	esAddresses := utils.GetEnvVariableString("ES_ADDRESSES", "https://localhost:8200")
-	esUsername := utils.GetEnvVariableString("ES_USERNAME", "elastic")
-	esPassword := utils.GetEnvVariableString("ES_PASSWORD", "")
+	esAddresses := utils.GetEnvVariableString("ES_ADDRESSES", "https://localhost:9200")
+	mongoUri := utils.GetEnvVariableString("MONGO_URI", "")
 
 	return &Config{
 		ListenPort:     listenPort,
@@ -40,5 +40,6 @@ func ProvideConfig() *Config {
 			Username:  esUsername,
 			Password:  esPassword,
 		},
+		MongoUri: mongoUri,
 	}
 }
