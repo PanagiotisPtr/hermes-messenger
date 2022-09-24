@@ -8,6 +8,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.uber.org/fx"
 	"go.uber.org/zap"
 )
 
@@ -22,13 +23,23 @@ type MongoRepository struct {
 }
 
 func ProvideMongoRepository(
+	lc fx.Lifecycle,
 	logger *zap.Logger,
 	database *mongo.Database,
 ) Repository {
-	return &MongoRepository{
+	repo := &MongoRepository{
 		logger: logger,
 		coll:   database.Collection(UserCollectionName),
 	}
+
+	lc.Append(fx.Hook{
+		OnStart: func(ctx context.Context) error {
+			logger.Sugar().Info("Initialising mongobd indexes for user repository")
+			return repo.InitIndexes(ctx)
+		},
+	})
+
+	return repo
 }
 
 func (r *MongoRepository) InitIndexes(
@@ -56,19 +67,11 @@ func (r *MongoRepository) AddUser(
 		return nil, fmt.Errorf("email address is empty")
 	}
 
-	u, err := r.GetUserByEmail(ctx, email)
-	if err != nil {
-		return nil, err
-	}
-	if u != nil {
-		return nil, fmt.Errorf("a user with this email address already exists")
-	}
-
-	u = &User{
+	u := &User{
 		Uuid:  uuid.New(),
 		Email: email,
 	}
-	_, err = r.coll.InsertOne(ctx, u)
+	_, err := r.coll.InsertOne(ctx, u)
 
 	return u, err
 }
@@ -96,5 +99,5 @@ func (r *MongoRepository) GetUserByEmail(
 		return nil, nil
 	}
 
-	return nil, nil
+	return &u, nil
 }

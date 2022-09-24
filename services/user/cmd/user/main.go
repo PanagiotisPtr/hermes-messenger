@@ -45,12 +45,38 @@ func ProvideRedisClient(cfg *config.Config) *redis.Client {
 	return redis.NewClient(cfg.Redis)
 }
 
-func ProvideMongoClient(cfg *config.Config) (*mongo.Client, error) {
-	return mongo.NewClient(
+func ProvideMongoClient(
+	lc fx.Lifecycle,
+	logger *zap.Logger,
+	cfg *config.Config,
+) (*mongo.Client, error) {
+	client, err := mongo.NewClient(
 		mongoutils.SetRegistryForUuids(
 			options.Client().ApplyURI(cfg.MongoConfig.MongoUri),
 		),
 	)
+	if err != nil {
+		return nil, err
+	}
+
+	lc.Append(fx.Hook{
+		OnStart: func(ctx context.Context) error {
+			logger.Sugar().Info("Connecting to mongo")
+			err := client.Connect(ctx)
+			if err != nil {
+				return err
+			}
+
+			return nil
+		},
+		OnStop: func(ctx context.Context) error {
+			logger.Sugar().Info("Disconnecting from database")
+
+			return client.Disconnect(ctx)
+		},
+	})
+
+	return client, nil
 }
 
 func ProvideMongoDatabase(
@@ -71,11 +97,6 @@ func Bootstrap(
 	logger.Sugar().Info("Starting user service")
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
-			logger.Sugar().Info("Connecting to mongo")
-			err := client.Connect(ctx)
-			if err != nil {
-				return err
-			}
 			logger.Sugar().Info("Starting GRPC server.")
 			addr := fmt.Sprintf(":%d", cfg.ListenPort)
 			list, err := net.Listen("tcp", addr)
