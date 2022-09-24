@@ -45,20 +45,37 @@ func ProvideRedisClient(cfg *config.Config) *redis.Client {
 	return redis.NewClient(cfg.Redis)
 }
 
-func ProvideMongoClient(ctx context.Context, cfg *config.Config) (*mongo.Client, error) {
-	return mongo.Connect(
-		ctx,
+func ProvideMongoClient(cfg *config.Config) (*mongo.Client, error) {
+	return mongo.NewClient(
 		mongoutils.SetRegistryForUuids(
-			options.Client().ApplyURI(cfg.MongoUri),
+			options.Client().ApplyURI(cfg.MongoConfig.MongoUri),
 		),
 	)
 }
 
+func ProvideMongoDatabase(
+	client *mongo.Client,
+	cfg *config.Config,
+) *mongo.Database {
+	return client.Database(cfg.MongoConfig.MongoDb)
+}
+
 // Bootstraps the application
-func Bootstrap(lc fx.Lifecycle, gs *grpc.Server, cfg *config.Config, logger *zap.Logger) {
+func Bootstrap(
+	lc fx.Lifecycle,
+	client *mongo.Client,
+	gs *grpc.Server,
+	cfg *config.Config,
+	logger *zap.Logger,
+) {
 	logger.Sugar().Info("Starting user service")
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
+			logger.Sugar().Info("Connecting to mongo")
+			err := client.Connect(ctx)
+			if err != nil {
+				return err
+			}
 			logger.Sugar().Info("Starting GRPC server.")
 			addr := fmt.Sprintf(":%d", cfg.ListenPort)
 			list, err := net.Listen("tcp", addr)
@@ -91,13 +108,13 @@ func ProvideLogger() *zap.Logger {
 func main() {
 	app := fx.New(
 		fx.Provide(
-			ProvideElasticsearchClient,
-			ProvideRedisClient,
 			ProvideLogger,
+			ProvideMongoClient,
+			ProvideMongoDatabase,
 			config.ProvideConfig,
 			server.ProvideUserServer,
 			user.ProvideUserService,
-			user.ProvideESRepository,
+			user.ProvideMongoRepository,
 			ProvideGRPCServer,
 		),
 		fx.Invoke(Bootstrap),
