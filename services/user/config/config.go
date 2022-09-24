@@ -8,12 +8,18 @@ import (
 	"github.com/panagiotisptr/hermes-messenger/libs/utils"
 )
 
+type mongoConfig struct {
+	MongoUri string
+	MongoDb  string
+}
+
 // Application config
 type Config struct {
 	ListenPort     int
 	GRPCReflection bool
 	Redis          *redis.Options
 	ESConfig       elasticsearch.Config
+	MongoConfig    mongoConfig
 }
 
 // Provides the application config
@@ -23,9 +29,9 @@ func ProvideConfig() *Config {
 	redisPassword := utils.GetEnvVariableString("REDIS_PASSWORD", "")
 	redisDatabase := utils.GetEnvVariableInt("REDIS_DB", 0)
 	grpcReflection := utils.GetEnvVariableBool("GRPC_REFLECTION", false)
-	esAddresses := utils.GetEnvVariableString("ES_ADDRESSES", "https://localhost:8200")
-	esUsername := utils.GetEnvVariableString("ES_USERNAME", "elastic")
-	esPassword := utils.GetEnvVariableString("ES_PASSWORD", "")
+	esAddresses := utils.GetEnvVariableString("ES_ADDRESSES", "http://localhost:9200")
+	mongoUri := utils.GetEnvVariableString("MONGO_URI", "mongodb://localhost:27017")
+	mongoDb := utils.GetEnvVariableString("MONGO_DB", "user")
 
 	return &Config{
 		ListenPort:     listenPort,
@@ -37,8 +43,10 @@ func ProvideConfig() *Config {
 		},
 		ESConfig: elasticsearch.Config{
 			Addresses: strings.Split(esAddresses, ","),
-			Username:  esUsername,
-			Password:  esPassword,
+		},
+		MongoConfig: mongoConfig{
+			MongoUri: mongoUri,
+			MongoDb:  mongoDb,
 		},
 	}
 }

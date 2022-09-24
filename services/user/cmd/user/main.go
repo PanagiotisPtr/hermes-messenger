@@ -7,10 +7,13 @@ import (
 
 	elasticsearch "github.com/elastic/go-elasticsearch/v8"
 	"github.com/go-redis/redis/v9"
+	"github.com/panagiotisptr/hermes-messenger/libs/utils/mongoutils"
 	"github.com/panagiotisptr/hermes-messenger/protos"
 	"github.com/panagiotisptr/hermes-messenger/user/config"
 	"github.com/panagiotisptr/hermes-messenger/user/server"
 	"github.com/panagiotisptr/hermes-messenger/user/server/user"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxevent"
 	"go.uber.org/zap"
@@ -42,8 +45,55 @@ func ProvideRedisClient(cfg *config.Config) *redis.Client {
 	return redis.NewClient(cfg.Redis)
 }
 
+func ProvideMongoClient(
+	lc fx.Lifecycle,
+	logger *zap.Logger,
+	cfg *config.Config,
+) (*mongo.Client, error) {
+	client, err := mongo.NewClient(
+		mongoutils.SetRegistryForUuids(
+			options.Client().ApplyURI(cfg.MongoConfig.MongoUri),
+		),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	lc.Append(fx.Hook{
+		OnStart: func(ctx context.Context) error {
+			logger.Sugar().Info("Connecting to mongo")
+			err := client.Connect(ctx)
+			if err != nil {
+				return err
+			}
+
+			return nil
+		},
+		OnStop: func(ctx context.Context) error {
+			logger.Sugar().Info("Disconnecting from database")
+
+			return client.Disconnect(ctx)
+		},
+	})
+
+	return client, nil
+}
+
+func ProvideMongoDatabase(
+	client *mongo.Client,
+	cfg *config.Config,
+) *mongo.Database {
+	return client.Database(cfg.MongoConfig.MongoDb)
+}
+
 // Bootstraps the application
-func Bootstrap(lc fx.Lifecycle, gs *grpc.Server, cfg *config.Config, logger *zap.Logger) {
+func Bootstrap(
+	lc fx.Lifecycle,
+	client *mongo.Client,
+	gs *grpc.Server,
+	cfg *config.Config,
+	logger *zap.Logger,
+) {
 	logger.Sugar().Info("Starting user service")
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
@@ -79,13 +129,13 @@ func ProvideLogger() *zap.Logger {
 func main() {
 	app := fx.New(
 		fx.Provide(
-			ProvideElasticsearchClient,
-			ProvideRedisClient,
 			ProvideLogger,
+			ProvideMongoClient,
+			ProvideMongoDatabase,
 			config.ProvideConfig,
 			server.ProvideUserServer,
 			user.ProvideUserService,
-			user.ProvideESRepository,
+			user.ProvideMongoRepository,
 			ProvideGRPCServer,
 		),
 		fx.Invoke(Bootstrap),
