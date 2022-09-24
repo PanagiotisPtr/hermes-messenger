@@ -18,6 +18,6 @@ WORKDIR $GOPATH/github.com/panagiotisptr/hermes-messenger/services/user
 
 RUN go mod tidy
 
-RUN go build . 
+RUN go build -o user cmd/user/main.go
 
 ENTRYPOINT [ "./user" ]
