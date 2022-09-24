@@ -48,7 +48,7 @@ func (r *MongoRepository) InitIndexes(
 	_, err := r.coll.Indexes().CreateMany(ctx,
 		[]mongo.IndexModel{
 			{
-				Keys: bson.D{{Key: "email", Value: 1}},
+				Keys: bson.D{{Key: "Email", Value: 1}},
 				Options: options.Index().
 					SetUnique(true).
 					SetName(UserEmailIndex),
