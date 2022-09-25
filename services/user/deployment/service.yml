@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: user-deployment
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: user-service
@@ -14,35 +14,24 @@ spec:
     spec:
       containers:
       - name: user-deployment
-        image: panagiotisptr/user
+        image: panagiotisptr/user-amd64
         ports:
           - containerPort: 80
         env:
           - name: LISTEN_PORT
             value: "80"
           - name: REDIS_ADDRESS
-            value: "user-redis-master:6379"
-          - name: REDIS_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                name: user-redis
-                key: redis-password
-                optional: false
+            value: "redis-service:6379"
           - name: REDIS_DB
             value: "0"
           - name: GRPC_REFLECTION
             value: "true"
           - name: ES_ADDRESSES
-            value: "http://user-elasticsearch-es-http:9200"
+            value: "http://elasticsearch-service:9200"
           - name: ES_USERNAME
             value: "elastic"
-          - name: ES_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                name: user-elasticsearch-es-elastic-user
-                key: elastic
-                optional: false
-
+          - name: MONGO_URI
+            value: "mongodb://mongo-service:27017"
 ---
 apiVersion: v1
 kind: Service
