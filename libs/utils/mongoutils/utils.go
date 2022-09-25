@@ -1,6 +1,7 @@
 package mongoutils
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 
@@ -10,7 +11,10 @@ import (
 	"go.mongodb.org/mongo-driver/bson/bsonrw"
 	"go.mongodb.org/mongo-driver/bson/bsontype"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.uber.org/fx"
+	"go.uber.org/zap"
 )
 
 var (
@@ -75,4 +79,50 @@ func SetRegistryForUuids(
 func BinaryToUuid(id interface{}) uuid.UUID {
 	bid := id.(primitive.Binary).Data
 	return *(*uuid.UUID)(bid)
+}
+
+type MongoConfig struct {
+	MongoUri string
+	MongoDb  string
+}
+
+func ProvideMongoClient(
+	lc fx.Lifecycle,
+	logger *zap.Logger,
+	cfg *MongoConfig,
+) (*mongo.Client, error) {
+	client, err := mongo.NewClient(
+		SetRegistryForUuids(
+			options.Client().ApplyURI(cfg.MongoUri),
+		),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	lc.Append(fx.Hook{
+		OnStart: func(ctx context.Context) error {
+			logger.Sugar().Info("Connecting to mongo")
+			err := client.Connect(ctx)
+			if err != nil {
+				return err
+			}
+
+			return nil
+		},
+		OnStop: func(ctx context.Context) error {
+			logger.Sugar().Info("Disconnecting from database")
+
+			return client.Disconnect(ctx)
+		},
+	})
+
+	return client, nil
+}
+
+func ProvideMongoDatabase(
+	client *mongo.Client,
+	cfg *MongoConfig,
+) *mongo.Database {
+	return client.Database(cfg.MongoDb)
 }

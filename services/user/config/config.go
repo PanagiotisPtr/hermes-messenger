@@ -6,12 +6,8 @@ import (
 	elasticsearch "github.com/elastic/go-elasticsearch/v8"
 	"github.com/go-redis/redis/v9"
 	"github.com/panagiotisptr/hermes-messenger/libs/utils"
+	"github.com/panagiotisptr/hermes-messenger/libs/utils/mongoutils"
 )
-
-type mongoConfig struct {
-	MongoUri string
-	MongoDb  string
-}
 
 // Application config
 type Config struct {
@@ -19,7 +15,7 @@ type Config struct {
 	GRPCReflection bool
 	Redis          *redis.Options
 	ESConfig       elasticsearch.Config
-	MongoConfig    mongoConfig
+	MongoConfig    mongoutils.MongoConfig
 }
 
 // Provides the application config
@@ -44,7 +40,7 @@ func ProvideConfig() *Config {
 		ESConfig: elasticsearch.Config{
 			Addresses: strings.Split(esAddresses, ","),
 		},
-		MongoConfig: mongoConfig{
+		MongoConfig: mongoutils.MongoConfig{
 			MongoUri: mongoUri,
 			MongoDb:  mongoDb,
 		},

@@ -13,7 +13,6 @@ import (
 	"github.com/panagiotisptr/hermes-messenger/user/server"
 	"github.com/panagiotisptr/hermes-messenger/user/server/user"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxevent"
 	"go.uber.org/zap"
@@ -45,45 +44,10 @@ func ProvideRedisClient(cfg *config.Config) *redis.Client {
 	return redis.NewClient(cfg.Redis)
 }
 
-func ProvideMongoClient(
-	lc fx.Lifecycle,
-	logger *zap.Logger,
+func ProvideMongoConfig(
 	cfg *config.Config,
-) (*mongo.Client, error) {
-	client, err := mongo.NewClient(
-		mongoutils.SetRegistryForUuids(
-			options.Client().ApplyURI(cfg.MongoConfig.MongoUri),
-		),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	lc.Append(fx.Hook{
-		OnStart: func(ctx context.Context) error {
-			logger.Sugar().Info("Connecting to mongo")
-			err := client.Connect(ctx)
-			if err != nil {
-				return err
-			}
-
-			return nil
-		},
-		OnStop: func(ctx context.Context) error {
-			logger.Sugar().Info("Disconnecting from database")
-
-			return client.Disconnect(ctx)
-		},
-	})
-
-	return client, nil
-}
-
-func ProvideMongoDatabase(
-	client *mongo.Client,
-	cfg *config.Config,
-) *mongo.Database {
-	return client.Database(cfg.MongoConfig.MongoDb)
+) *mongoutils.MongoConfig {
+	return &cfg.MongoConfig
 }
 
 // Bootstraps the application
@@ -130,8 +94,9 @@ func main() {
 	app := fx.New(
 		fx.Provide(
 			ProvideLogger,
-			ProvideMongoClient,
-			ProvideMongoDatabase,
+			ProvideMongoConfig,
+			mongoutils.ProvideMongoClient,
+			mongoutils.ProvideMongoDatabase,
 			config.ProvideConfig,
 			server.ProvideUserServer,
 			user.ProvideUserService,

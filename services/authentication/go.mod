@@ -5,12 +5,12 @@ go 1.18
 require (
 	github.com/go-redis/redis/v9 v9.0.0-beta.1
 	github.com/golang-jwt/jwt v3.2.2+incompatible
-	github.com/google/uuid v1.1.2
+	github.com/google/uuid v1.3.0
 	github.com/panagiotisptr/hermes-messenger/libs/utils v0.0.0
 	github.com/panagiotisptr/hermes-messenger/protos v0.0.0
 	go.uber.org/fx v1.17.1
 	go.uber.org/zap v1.21.0
-	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a
+	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d
 	google.golang.org/grpc v1.47.0
 )
 
