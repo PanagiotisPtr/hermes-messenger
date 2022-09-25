@@ -138,3 +138,24 @@ spec:
     targetPort: 6379
   selector:
     app: redis-service
+---
+# Monstache Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: monstache-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: monstache-service
+  template:
+    metadata:
+      labels:
+        app: monstache-service
+    spec:
+      containers:
+      - name: monstache-deployment
+        image: rwynn/monstache:rel6
+        command: ["monstache"]
+        args: ["-mongo-url=mongodb://mongo-service:27017", "-elasticsearch-url=http://elasticsearch-service:9200"]
