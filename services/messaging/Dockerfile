@@ -18,6 +18,6 @@ WORKDIR $GOPATH/github.com/panagiotisptr/hermes-messenger/services/messaging
 
 RUN go mod tidy
 
-RUN go build . 
+RUN go build -o messaging cmd/messaging/main.go
 
 ENTRYPOINT [ "./messaging" ]

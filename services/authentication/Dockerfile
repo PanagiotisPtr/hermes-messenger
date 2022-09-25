@@ -18,6 +18,6 @@ WORKDIR $GOPATH/github.com/panagiotisptr/hermes-messenger/services/authenticatio
 
 RUN go mod tidy
 
-RUN go build . 
+RUN go build -o authentication cmd/authentication/main.go
 
 ENTRYPOINT [ "./authentication" ]
