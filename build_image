@@ -1,2 +1,2 @@
 #!/bin/bash
-docker build --no-cache -t panagiotisptr/$1 -f services/$1/Dockerfile .
+docker build --platform=linux/$2 --no-cache -t panagiotisptr/$1-$2 -f services/$1/Dockerfile .

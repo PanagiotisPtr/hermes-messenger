@@ -27,3 +27,13 @@ After installing all the dependencies for a service run
 LISTEN_PORT=SOME_PORT HEALTH_CHECK_PORT=SOME_OTHER_PORT go run main.go
 ```
 from inside the service's folder. You can also build the services or make Docker images for them (will be done eventually for all services)
+
+Note that if you are deploying this on kubernetes with a single node mongo cluster then you need to run this command on the mongo pod
+```
+mongosh --eval "rs.initiate({
+ _id: \"mongo-rs\",
+ members: [
+   {_id: 0, host: \"127.0.0.1:27017\"}
+ ]
+})"
+```
