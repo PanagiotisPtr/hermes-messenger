@@ -44,7 +44,7 @@ func (r *ESRepository) SaveMessage(
 ) error {
 	docId := uuid.New()
 	m := &Message{
-		Uuid:      docId,
+		ID:        docId,
 		From:      from,
 		To:        to,
 		Timestamp: time.Now().Unix(),

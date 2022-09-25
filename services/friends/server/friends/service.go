@@ -92,8 +92,12 @@ func (s *Service) GetFriends(
 	}
 
 	for _, c := range connections {
+		friendUuid := c.From
+		if friendUuid == userUuid {
+			friendUuid = c.To
+		}
 		fs = append(fs, &Friend{
-			FriendUuid: c.From,
+			FriendUuid: friendUuid,
 			Status:     c.Status,
 		})
 	}

@@ -5,7 +5,8 @@ import (
 )
 
 type Connection struct {
-	From   uuid.UUID `json:"From"`
-	To     uuid.UUID `json:"To"`
-	Status string    `json:"Status"`
+	ID     uuid.UUID `bson:"_id" json:"ID"`
+	From   uuid.UUID `bson:"From" json:"From"`
+	To     uuid.UUID `bson:"To" json:"To"`
+	Status string    `bson:"Status" json:"Status"`
 }

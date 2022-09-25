@@ -18,6 +18,6 @@ WORKDIR $GOPATH/github.com/panagiotisptr/hermes-messenger/services/friends
 
 RUN go mod tidy
 
-RUN go build . 
+RUN go build -o friends cmd/friends/main.go
 
 ENTRYPOINT [ "./friends" ]

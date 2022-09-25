@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/elastic/go-elasticsearch/v8"
-	redis "github.com/go-redis/redis/v9"
-	"github.com/panagiotisptr/hermes-messenger/messaging/config"
-	"github.com/panagiotisptr/hermes-messenger/messaging/server"
-	"github.com/panagiotisptr/hermes-messenger/messaging/server/messaging"
+	"github.com/go-redis/redis/v9"
+	"github.com/panagiotisptr/hermes-messenger/friends/config"
+	"github.com/panagiotisptr/hermes-messenger/friends/server"
+	"github.com/panagiotisptr/hermes-messenger/friends/server/connection"
+	"github.com/panagiotisptr/hermes-messenger/friends/server/friends"
+	"github.com/panagiotisptr/hermes-messenger/libs/utils/mongoutils"
 	"github.com/panagiotisptr/hermes-messenger/protos"
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxevent"
@@ -21,11 +22,11 @@ import (
 
 // Provides the GRPC server instance
 func ProvideGRPCServer(
-	ms *server.MessagingServer,
+	fs *server.FriendsServer,
 	cfg *config.Config,
 ) (*grpc.Server, error) {
 	gs := grpc.NewServer()
-	protos.RegisterMessagingServer(gs, ms)
+	protos.RegisterFriendsServer(gs, fs)
 
 	if cfg.GRPCReflection {
 		reflection.Register(gs)
@@ -34,12 +35,14 @@ func ProvideGRPCServer(
 	return gs, nil
 }
 
-func ProvideElasticsearchClient(cfg *config.Config) (*elasticsearch.Client, error) {
-	return elasticsearch.NewClient(cfg.ESConfig)
-}
-
 func ProvideRedisClient(cfg *config.Config) *redis.Client {
 	return redis.NewClient(cfg.Redis)
+}
+
+func ProvideMongoConfig(
+	cfg *config.Config,
+) *mongoutils.MongoConfig {
+	return &cfg.MongoConfig
 }
 
 // Bootstraps the application
@@ -49,7 +52,7 @@ func Bootstrap(
 	cfg *config.Config,
 	logger *zap.Logger,
 ) {
-	logger.Sugar().Info("Starting messaging service")
+	logger.Sugar().Info("Starting user service")
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
 			logger.Sugar().Info("Starting GRPC server.")
@@ -81,13 +84,13 @@ func ProvideLogger() *zap.Logger {
 	return logger
 }
 
-// Provides the Friends client instance
-func ProvideFriendsClient(
+// Provides user Client
+func ProvideUserClient(
 	lc fx.Lifecycle,
 	cfg *config.Config,
-) (protos.FriendsClient, error) {
-	friendsConn, err := grpc.Dial(
-		cfg.FriendsServiceAddress,
+) (protos.UserClient, error) {
+	userConn, err := grpc.Dial(
+		cfg.UserServiceAddress,
 		grpc.WithInsecure(),
 	)
 	if err != nil {
@@ -96,24 +99,26 @@ func ProvideFriendsClient(
 
 	lc.Append(fx.Hook{
 		OnStop: func(ctx context.Context) error {
-			return friendsConn.Close()
+			return userConn.Close()
 		},
 	})
 
-	return protos.NewFriendsClient(friendsConn), nil
+	return protos.NewUserClient(userConn), nil
 }
 
 func main() {
 	app := fx.New(
 		fx.Provide(
-			ProvideElasticsearchClient,
 			ProvideRedisClient,
 			ProvideLogger,
-			ProvideFriendsClient,
+			ProvideUserClient,
+			ProvideMongoConfig,
+			mongoutils.ProvideMongoClient,
+			mongoutils.ProvideMongoDatabase,
 			config.ProvideConfig,
-			server.ProvideUserServer,
-			messaging.ProvideMessagingService,
-			messaging.ProvideESRepository,
+			server.ProvideFriendsServer,
+			friends.ProvideFriendsService,
+			connection.ProvideMongoRepository,
 			ProvideGRPCServer,
 		),
 		fx.Invoke(Bootstrap),

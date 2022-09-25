@@ -3,6 +3,7 @@ package config
 import (
 	"github.com/go-redis/redis/v9"
 	"github.com/panagiotisptr/hermes-messenger/libs/utils"
+	"github.com/panagiotisptr/hermes-messenger/libs/utils/mongoutils"
 )
 
 // Application config
@@ -11,6 +12,7 @@ type Config struct {
 	GRPCReflection     bool
 	UserServiceAddress string
 	Redis              *redis.Options
+	MongoConfig        mongoutils.MongoConfig
 }
 
 // Provides the application config
@@ -21,6 +23,8 @@ func ProvideConfig() *Config {
 	redisPassword := utils.GetEnvVariableString("REDIS_PASSWORD", "")
 	redisDatabase := utils.GetEnvVariableInt("REDIS_DB", 0)
 	grpcReflection := utils.GetEnvVariableBool("GRPC_REFLECTION", false)
+	mongoUri := utils.GetEnvVariableString("MONGO_URI", "mongodb://localhost:27017")
+	mongoDb := utils.GetEnvVariableString("MONGO_DB", "friends")
 
 	return &Config{
 		ListenPort:         listenPort,
@@ -30,6 +34,10 @@ func ProvideConfig() *Config {
 			Addr:     redisAddress,
 			Password: redisPassword,
 			DB:       redisDatabase,
+		},
+		MongoConfig: mongoutils.MongoConfig{
+			MongoUri: mongoUri,
+			MongoDb:  mongoDb,
 		},
 	}
 }
