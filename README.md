@@ -33,7 +33,7 @@ Note that if you are deploying this on kubernetes with a single node mongo clust
 mongosh --eval "rs.initiate({
  _id: \"mongo-rs\",
  members: [
-   {_id: 0, host: \"127.0.0.1:27017\"}
+   {_id: 0, host: \"mongo-service\"}
  ]
 })"
 ```
