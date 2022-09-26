@@ -7,7 +7,14 @@ import (
 )
 
 type Repository interface {
-	AddUser(context.Context, string) (*User, error)
-	GetUser(context.Context, uuid.UUID) (*User, error)
-	GetUserByEmail(context.Context, string) (*User, error)
+	// Create creates a new user
+	Create(context.Context, UserDetails) (*User, error)
+
+	// Get gets a user by their uuid
+	// returns nil if not found
+	Get(context.Context, uuid.UUID) (*User, error)
+
+	// GetByEmail finds a user from their email
+	// returns nil if not found
+	GetByEmail(context.Context, string) (*User, error)
 }

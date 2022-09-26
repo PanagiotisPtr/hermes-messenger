@@ -34,15 +34,15 @@ func ProvideMongoRepository(
 
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
-			logger.Sugar().Info("Initialising mongobd indexes for user repository")
-			return repo.InitIndexes(ctx)
+			logger.Sugar().Info("initialising mongobd indexes for user repository")
+			return repo.initIndexes(ctx)
 		},
 	})
 
 	return repo
 }
 
-func (r *MongoRepository) InitIndexes(
+func (r *MongoRepository) initIndexes(
 	ctx context.Context,
 ) error {
 	_, err := r.coll.Indexes().CreateMany(ctx,
@@ -59,24 +59,24 @@ func (r *MongoRepository) InitIndexes(
 	return err
 }
 
-func (r *MongoRepository) AddUser(
+func (r *MongoRepository) Create(
 	ctx context.Context,
-	email string,
+	args UserDetails,
 ) (*User, error) {
-	if email == "" {
+	if args.Email == "" {
 		return nil, fmt.Errorf("email address is empty")
 	}
 
 	u := &User{
-		Uuid:  uuid.New(),
-		Email: email,
+		ID:          uuid.New(),
+		UserDetails: args,
 	}
 	_, err := r.coll.InsertOne(ctx, u)
 
 	return u, err
 }
 
-func (r *MongoRepository) GetUser(
+func (r *MongoRepository) Get(
 	ctx context.Context,
 	id uuid.UUID,
 ) (*User, error) {
@@ -89,7 +89,7 @@ func (r *MongoRepository) GetUser(
 	return &u, err
 }
 
-func (r *MongoRepository) GetUserByEmail(
+func (r *MongoRepository) GetByEmail(
 	ctx context.Context,
 	email string,
 ) (*User, error) {

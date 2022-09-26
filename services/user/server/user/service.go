@@ -8,11 +8,14 @@ import (
 	"go.uber.org/zap"
 )
 
+// Service represents a user service
 type Service struct {
 	logger   *zap.Logger
 	userRepo Repository
 }
 
+// ProvideUserService provides an instance of the user
+// service
 func ProvideUserService(
 	logger *zap.Logger,
 	userRepo Repository,
@@ -23,29 +26,30 @@ func ProvideUserService(
 	}
 }
 
-func (s *Service) RegisterUser(
+// CreateUser creates a new user
+func (s *Service) CreateUser(
 	ctx context.Context,
-	email string,
+	args UserDetails,
 ) (*User, error) {
-	return s.userRepo.AddUser(ctx, email)
+	return s.userRepo.Create(ctx, args)
 }
 
+// GetUser returns a user from their (uu)id
 func (s *Service) GetUser(
 	ctx context.Context,
 	id uuid.UUID,
 ) (*User, error) {
-	return s.userRepo.GetUser(ctx, id)
+	return s.userRepo.Get(ctx, id)
 }
 
 func (s *Service) GetUserByEmail(
 	ctx context.Context,
 	email string,
 ) (*User, error) {
-	u, err := s.userRepo.GetUserByEmail(ctx, email)
+	u, err := s.userRepo.GetByEmail(ctx, email)
 	if err != nil {
 		return nil, err
 	}
-
 	if u == nil {
 		return nil, fmt.Errorf("Could not find user with email \"%s\"", email)
 	}

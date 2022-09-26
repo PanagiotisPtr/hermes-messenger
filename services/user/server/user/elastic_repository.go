@@ -8,6 +8,7 @@ import (
 	elasticsearch "github.com/elastic/go-elasticsearch/v8"
 	"github.com/google/uuid"
 	"github.com/panagiotisptr/hermes-messenger/libs/utils/esutils"
+	"go.uber.org/fx"
 	"go.uber.org/zap"
 )
 
@@ -21,15 +22,23 @@ type ESRepository struct {
 }
 
 func ProvideESRepository(
+	lc fx.Lifecycle,
 	logger *zap.Logger,
 	es *elasticsearch.Client,
-) (Repository, error) {
+) Repository {
 	r := &ESRepository{
 		logger: logger,
 		es:     es,
 	}
 
-	return r, r.initIndexes()
+	lc.Append(fx.Hook{
+		OnStart: func(ctx context.Context) error {
+			logger.Sugar().Info("initialising elasticsearch indexes for user repository")
+			return r.initIndexes()
+		},
+	})
+
+	return r
 }
 
 func (r *ESRepository) initIndexes() error {
@@ -53,15 +62,15 @@ func (r *ESRepository) initIndexes() error {
 	return nil
 }
 
-func (r *ESRepository) AddUser(
+func (r *ESRepository) Create(
 	ctx context.Context,
-	email string,
+	args UserDetails,
 ) (*User, error) {
-	if email == "" {
+	if args.Email == "" {
 		return nil, fmt.Errorf("email address is empty")
 	}
 
-	u, err := r.GetUserByEmail(ctx, email)
+	u, err := r.GetByEmail(ctx, args.Email)
 	if err != nil {
 		return nil, err
 	}
@@ -71,8 +80,8 @@ func (r *ESRepository) AddUser(
 
 	docId := uuid.New()
 	u = &User{
-		Uuid:  docId,
-		Email: email,
+		ID:          docId,
+		UserDetails: args,
 	}
 	err = esutils.StoreDocument(
 		ctx,
@@ -89,7 +98,7 @@ func (r *ESRepository) AddUser(
 	return u, nil
 }
 
-func (r *ESRepository) GetUser(
+func (r *ESRepository) Get(
 	ctx context.Context,
 	userUuid uuid.UUID,
 ) (*User, error) {
@@ -123,7 +132,7 @@ func (r *ESRepository) GetUser(
 	return users[0], nil
 }
 
-func (r *ESRepository) GetUserByEmail(
+func (r *ESRepository) GetByEmail(
 	ctx context.Context,
 	email string,
 ) (*User, error) {

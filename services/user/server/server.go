@@ -10,52 +10,66 @@ import (
 	"github.com/google/uuid"
 )
 
-type UserServer struct {
+// Server represents a server that can be used for the grpc user service
+type Server struct {
 	logger  *zap.Logger
 	service *user.Service
-	protos.UnimplementedUserServer
+	protos.UnimplementedUserServiceServer
 }
 
+// ProvideUserServer provides a user service server
 func ProvideUserServer(
 	logger *zap.Logger,
 	service *user.Service,
-) (*UserServer, error) {
-	return &UserServer{
+) (*Server, error) {
+	return &Server{
 		logger:  logger,
 		service: service,
 	}, nil
 }
 
-func userToEntity(u *user.User) *protos.UserEntity {
+// userToEntity converts an entity to a user object for grpc
+func userToEntity(u *user.User) *protos.User {
 	if u == nil {
 		return nil
 	}
 
-	return &protos.UserEntity{
-		Uuid:  u.Uuid.String(),
-		Email: u.Email,
+	return &protos.User{
+		Id:        u.ID.String(),
+		Email:     u.Email,
+		FirstName: u.FirstName,
+		LastName:  u.LastName,
 	}
 }
 
-func (us *UserServer) RegisterUser(
+// CreateUser creates a new user
+func (us *Server) CreateUser(
 	ctx context.Context,
-	request *protos.RegisterUserRequest,
-) (*protos.RegisterUserResponse, error) {
-	u, err := us.service.RegisterUser(ctx, request.Email)
+	request *protos.CreateUserRequest,
+) (*protos.CreateUserResponse, error) {
+	u, err := us.service.CreateUser(
+		ctx,
+		user.UserDetails{
+			Email:     request.Email,
+			FirstName: request.FirstName,
+			LastName:  request.LastName,
+		},
+	)
 
-	return &protos.RegisterUserResponse{
+	return &protos.CreateUserResponse{
 		User: userToEntity(u),
 	}, err
 }
 
-func (us *UserServer) GetUser(
+// GetUser finds a user by their (uu)id - returns nil if not found
+func (us *Server) GetUser(
 	ctx context.Context,
 	request *protos.GetUserRequest,
 ) (*protos.GetUserResponse, error) {
 	response := &protos.GetUserResponse{
 		User: nil,
 	}
-	id, err := uuid.Parse(request.Uuid)
+	id, err := uuid.Parse(request.Id)
 	if err != nil {
 		return response, err
 	}
@@ -69,7 +83,8 @@ func (us *UserServer) GetUser(
 	return response, nil
 }
 
-func (us *UserServer) GetUserByEmail(
+// GetUser finds a user by their email - returns nil if not found
+func (us *Server) GetUserByEmail(
 	ctx context.Context,
 	request *protos.GetUserByEmailRequest,
 ) (*protos.GetUserByEmailResponse, error) {
