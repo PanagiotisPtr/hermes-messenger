@@ -13,9 +13,12 @@ type MemoryRepository struct {
 	logger *zap.Logger
 }
 
-func ProvideMemoryRepository() Repository {
+func ProvideMemoryRepository(
+	logger *zap.Logger,
+) Repository {
 	return &MemoryRepository{
-		users: make([]*User, 0),
+		users:  make([]*User, 0),
+		logger: logger,
 	}
 }
 
@@ -41,7 +44,7 @@ func (r *MemoryRepository) Create(
 		UserDetails: args,
 	})
 
-	return u, nil
+	return r.users[len(r.users)-1], nil
 }
 
 func (r *MemoryRepository) Get(

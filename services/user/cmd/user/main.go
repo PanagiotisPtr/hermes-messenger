@@ -23,11 +23,11 @@ import (
 
 // Provides the GRPC server instance
 func ProvideGRPCServer(
-	us *server.UserServer,
+	us *server.Server,
 	cfg *config.Config,
 ) (*grpc.Server, error) {
 	gs := grpc.NewServer()
-	protos.RegisterUserServer(gs, us)
+	protos.RegisterUserServiceServer(gs, us)
 
 	if cfg.GRPCReflection {
 		reflection.Register(gs)
