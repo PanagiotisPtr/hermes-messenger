@@ -1,10 +1,12 @@
-package user
+package mongo
 
 import (
 	"context"
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/panagiotisptr/hermes-messenger/user/model"
+	"github.com/panagiotisptr/hermes-messenger/user/repository"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -22,11 +24,11 @@ type MongoRepository struct {
 	logger *zap.Logger
 }
 
-func ProvideMongoRepository(
+func ProvideUserRepository(
 	lc fx.Lifecycle,
 	logger *zap.Logger,
 	database *mongo.Database,
-) Repository {
+) repository.Repository {
 	repo := &MongoRepository{
 		logger: logger,
 		coll:   database.Collection(UserCollectionName),
@@ -61,13 +63,13 @@ func (r *MongoRepository) initIndexes(
 
 func (r *MongoRepository) Create(
 	ctx context.Context,
-	args UserDetails,
-) (*User, error) {
+	args model.UserDetails,
+) (*model.User, error) {
 	if args.Email == "" {
 		return nil, fmt.Errorf("email address is empty")
 	}
 
-	u := &User{
+	u := &model.User{
 		ID:          uuid.New(),
 		UserDetails: args,
 	}
@@ -79,8 +81,8 @@ func (r *MongoRepository) Create(
 func (r *MongoRepository) Get(
 	ctx context.Context,
 	id uuid.UUID,
-) (*User, error) {
-	var u User
+) (*model.User, error) {
+	var u model.User
 	err := r.coll.FindOne(ctx, bson.M{"_id": id}).Decode(&u)
 	if err == mongo.ErrNoDocuments {
 		return nil, nil
@@ -92,8 +94,8 @@ func (r *MongoRepository) Get(
 func (r *MongoRepository) GetByEmail(
 	ctx context.Context,
 	email string,
-) (*User, error) {
-	var u User
+) (*model.User, error) {
+	var u model.User
 	err := r.coll.FindOne(ctx, bson.M{"Email": email}).Decode(&u)
 	if err == mongo.ErrNoDocuments {
 		return nil, nil

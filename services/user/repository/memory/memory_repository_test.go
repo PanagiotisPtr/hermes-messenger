@@ -1,4 +1,4 @@
-package user_test
+package memory
 
 import (
 	"context"
@@ -6,31 +6,32 @@ import (
 	"testing"
 
 	"github.com/panagiotisptr/hermes-messenger/libs/utils/testutils"
-	"github.com/panagiotisptr/hermes-messenger/user/server/user"
+	"github.com/panagiotisptr/hermes-messenger/user/model"
+	"github.com/panagiotisptr/hermes-messenger/user/repository"
 	"go.uber.org/zap"
 )
 
-func getRepository() user.Repository {
+func getRepository() repository.Repository {
 	logger, err := zap.NewDevelopment()
 	if err != nil {
 		panic(err)
 	}
 
-	return user.ProvideMemoryRepository(logger)
+	return ProvideUserRepository(logger)
 }
 
 func TestCreate(t *testing.T) {
 	type input struct {
 		ctx  context.Context
-		args user.UserDetails
-		repo user.Repository
+		args model.UserDetails
+		repo repository.Repository
 	}
 	type output struct {
-		u   *user.User
+		u   *model.User
 		err error
 	}
 	repo := getRepository()
-	userDetailsMatch := func(d user.UserDetails, u *user.User) error {
+	userDetailsMatch := func(d model.UserDetails, u *model.User) error {
 		if err := testutils.Assert(
 			"Email",
 			d.Email,
@@ -63,7 +64,7 @@ func TestCreate(t *testing.T) {
 			Name: "base case",
 			Input: input{
 				ctx: context.Background(),
-				args: user.UserDetails{
+				args: model.UserDetails{
 					Email:     "email@domain.localhost",
 					FirstName: "firstName",
 					LastName:  "lastName",

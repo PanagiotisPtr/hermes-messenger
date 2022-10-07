@@ -1,31 +1,33 @@
-package user
+package memory
 
 import (
 	"context"
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/panagiotisptr/hermes-messenger/user/model"
+	"github.com/panagiotisptr/hermes-messenger/user/repository"
 	"go.uber.org/zap"
 )
 
 type MemoryRepository struct {
-	users  []*User
+	users  []*model.User
 	logger *zap.Logger
 }
 
-func ProvideMemoryRepository(
+func ProvideUserRepository(
 	logger *zap.Logger,
-) Repository {
+) repository.Repository {
 	return &MemoryRepository{
-		users:  make([]*User, 0),
+		users:  make([]*model.User, 0),
 		logger: logger,
 	}
 }
 
 func (r *MemoryRepository) Create(
 	ctx context.Context,
-	args UserDetails,
-) (*User, error) {
+	args model.UserDetails,
+) (*model.User, error) {
 	if args.Email == "" {
 		return nil, fmt.Errorf("email cannot be empty")
 	}
@@ -39,7 +41,7 @@ func (r *MemoryRepository) Create(
 	if u != nil {
 		return nil, fmt.Errorf("email already in use")
 	}
-	r.users = append(r.users, &User{
+	r.users = append(r.users, &model.User{
 		ID:          uuid.New(),
 		UserDetails: args,
 	})
@@ -50,7 +52,7 @@ func (r *MemoryRepository) Create(
 func (r *MemoryRepository) Get(
 	ctx context.Context,
 	id uuid.UUID,
-) (*User, error) {
+) (*model.User, error) {
 	for _, u := range r.users {
 		if u.ID == id {
 			return u, nil
@@ -63,7 +65,7 @@ func (r *MemoryRepository) Get(
 func (r *MemoryRepository) GetByEmail(
 	ctx context.Context,
 	email string,
-) (*User, error) {
+) (*model.User, error) {
 	for _, u := range r.users {
 		if u.Email == email {
 			return u, nil

@@ -4,7 +4,8 @@ import (
 	"context"
 
 	"github.com/panagiotisptr/hermes-messenger/protos"
-	"github.com/panagiotisptr/hermes-messenger/user/server/user"
+	"github.com/panagiotisptr/hermes-messenger/user/model"
+	"github.com/panagiotisptr/hermes-messenger/user/service"
 	"go.uber.org/zap"
 
 	"github.com/google/uuid"
@@ -13,14 +14,14 @@ import (
 // Server represents a server that can be used for the grpc user service
 type Server struct {
 	logger  *zap.Logger
-	service *user.Service
+	service *service.Service
 	protos.UnimplementedUserServiceServer
 }
 
 // ProvideUserServer provides a user service server
 func ProvideUserServer(
 	logger *zap.Logger,
-	service *user.Service,
+	service *service.Service,
 ) (*Server, error) {
 	return &Server{
 		logger:  logger,
@@ -29,7 +30,7 @@ func ProvideUserServer(
 }
 
 // userToEntity converts an entity to a user object for grpc
-func userToEntity(u *user.User) *protos.User {
+func userToEntity(u *model.User) *protos.User {
 	if u == nil {
 		return nil
 	}
@@ -49,7 +50,7 @@ func (us *Server) CreateUser(
 ) (*protos.CreateUserResponse, error) {
 	u, err := us.service.CreateUser(
 		ctx,
-		user.UserDetails{
+		model.UserDetails{
 			Email:     request.Email,
 			FirstName: request.FirstName,
 			LastName:  request.LastName,
