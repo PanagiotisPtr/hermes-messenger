@@ -1,17 +1,16 @@
 package model
 
-import "github.com/google/uuid"
+import (
+	"github.com/google/uuid"
+	"github.com/panagiotisptr/hermes-messenger/libs/utils/entityutils"
+)
 
-// User entity used to store information about the User
+// User struct representing a User object
 type User struct {
-	ID uuid.UUID `bson:"_id" json:"id"`
-	UserDetails
-}
+	ID        uuid.UUID `bson:"_id" json:"id"`
+	Email     string    `bson:"email" json:"email"`
+	FirstName string    `bson:"firstName" json:"firstName"`
+	LastName  string    `bson:"lastName" json:"lastName"`
 
-// UserDetails struct representing the details available
-// for a user
-type UserDetails struct {
-	Email     string `bson:"email" json:"email"`
-	FirstName string `bson:"firstName" json:"firstName"`
-	LastName  string `bson:"lastName" json:"lastName"`
+	entityutils.Meta
 }

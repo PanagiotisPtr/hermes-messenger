@@ -21,15 +21,9 @@ type Config struct {
 	Mongo   mongoutils.Config
 }
 
-// Provides the application config
-func ProvideConfig() (*Config, error) {
-	configFilename := *flag.String("config", "config.dev.yml", "configuration file")
-	flag.Parse()
-
-	if os.Getenv("CONFIG_FILE") != "" {
-		configFilename = os.Getenv("CONFIG_FILE")
-	}
-	viper.SetConfigFile(configFilename)
+// loadConfig loads the configuration from a file
+func loadConfig(filename string) (*Config, error) {
+	viper.SetConfigFile(filename)
 	viper.AddConfigPath(".")
 
 	var config Config
@@ -43,4 +37,20 @@ func ProvideConfig() (*Config, error) {
 	}
 
 	return &config, nil
+}
+
+// Provides the application config
+func ProvideConfig() (*Config, error) {
+	configFilename := *flag.String("config", "config.dev.yml", "configuration file")
+	flag.Parse()
+
+	if os.Getenv("CONFIG_FILE") != "" {
+		configFilename = os.Getenv("CONFIG_FILE")
+	}
+
+	return loadConfig(configFilename)
+}
+
+func ProvideTestConfig() (*Config, error) {
+	return loadConfig("config.test.yml")
 }

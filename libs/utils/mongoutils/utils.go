@@ -81,19 +81,19 @@ func BinaryToUuid(id interface{}) uuid.UUID {
 	return *(*uuid.UUID)(bid)
 }
 
-type MongoConfig struct {
-	MongoUri string
-	MongoDb  string
+type Config struct {
+	Uri string
+	DB  string
 }
 
 func ProvideMongoClient(
 	lc fx.Lifecycle,
 	logger *zap.Logger,
-	cfg *MongoConfig,
+	cfg *Config,
 ) (*mongo.Client, error) {
 	client, err := mongo.NewClient(
 		SetRegistryForUuids(
-			options.Client().ApplyURI(cfg.MongoUri),
+			options.Client().ApplyURI(cfg.Uri),
 		),
 	)
 	if err != nil {
@@ -122,7 +122,7 @@ func ProvideMongoClient(
 
 func ProvideMongoDatabase(
 	client *mongo.Client,
-	cfg *MongoConfig,
+	cfg *Config,
 ) *mongo.Database {
-	return client.Database(cfg.MongoDb)
+	return client.Database(cfg.DB)
 }

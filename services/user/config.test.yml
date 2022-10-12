@@ -1,0 +1,12 @@
+service:
+  port: 8888
+  grpcReflection: true
+
+mongo:
+  uri: "mongodb://localhost:27017"
+  db: "test"
+
+redis:
+  addr: "localhost:6379"
+  password: ""
+  db: 0

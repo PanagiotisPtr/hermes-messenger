@@ -11,7 +11,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func getRepository() repository.Repository {
+func getRepository() repository.UserRepository {
 	logger, err := zap.NewDevelopment()
 	if err != nil {
 		panic(err)
@@ -23,15 +23,15 @@ func getRepository() repository.Repository {
 func TestCreate(t *testing.T) {
 	type input struct {
 		ctx  context.Context
-		args model.UserDetails
-		repo repository.Repository
+		args *model.User
+		repo repository.UserRepository
 	}
 	type output struct {
 		u   *model.User
 		err error
 	}
 	repo := getRepository()
-	userDetailsMatch := func(d model.UserDetails, u *model.User) error {
+	userDetailsMatch := func(d *model.User, u *model.User) error {
 		if err := testutils.Assert(
 			"Email",
 			d.Email,
@@ -64,7 +64,7 @@ func TestCreate(t *testing.T) {
 			Name: "base case",
 			Input: input{
 				ctx: context.Background(),
-				args: model.UserDetails{
+				args: &model.User{
 					Email:     "email@domain.localhost",
 					FirstName: "firstName",
 					LastName:  "lastName",

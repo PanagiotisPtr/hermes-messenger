@@ -1,27 +1,36 @@
 package mongo
 
 import (
+	"context"
 	"testing"
 
 	"github.com/panagiotisptr/hermes-messenger/libs/utils/mongoutils"
 	"github.com/panagiotisptr/hermes-messenger/user/config"
-	"github.com/panagiotisptr/hermes-messenger/user/repository"
+	"github.com/panagiotisptr/hermes-messenger/user/model"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.uber.org/fx"
 	"go.uber.org/fx/fxtest"
 	"go.uber.org/zap"
 )
 
-func getRepository(t *testing.T) repository.Repository {
+func getDatabase(
+	t *testing.T,
+	logger *zap.Logger,
+	lifecycle fx.Lifecycle,
+) *mongo.Database {
 	logger, err := zap.NewDevelopment()
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
-	config := config.ProvideConfig()
-	lifecycle := fxtest.NewLifecycle(t)
+	config, err := config.ProvideTestConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	mongoClient, err := mongoutils.ProvideMongoClient(
 		lifecycle,
 		logger,
-		&config.MongoConfig,
+		&config.Mongo,
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -29,12 +38,30 @@ func getRepository(t *testing.T) repository.Repository {
 
 	mongoDb := mongoutils.ProvideMongoDatabase(
 		mongoClient,
-		&config.MongoConfig,
+		&config.Mongo,
 	)
 
-	return ProvideUserRepository(
+	return mongoDb
+}
+
+func TestCreate(t *testing.T) {
+	logger, err := zap.NewDevelopment()
+	if err != nil {
+		t.Fatal(err)
+	}
+	lifecycle := fxtest.NewLifecycle(t)
+	mongoDb := getDatabase(t, logger, lifecycle)
+	defer mongoDb.Drop(context.Background())
+
+	repo := ProvideUserRepository(
 		lifecycle,
 		logger,
 		mongoDb,
+	)
+
+	user := model.UserDetails{}
+	u, err := repo.Create(
+		context.Background(),
+		user,
 	)
 }
