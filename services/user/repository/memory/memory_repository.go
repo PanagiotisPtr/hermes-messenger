@@ -91,7 +91,8 @@ func (r *MemoryRepository) Create(
 		return nil, fmt.Errorf("email already in use")
 	}
 	newUser := args
-	newUser.ID = uuid.New()
+	id := uuid.New()
+	newUser.ID = &id
 	newUser.Meta = entityutils.Meta{}
 	r.RepoHelper.UpdateMeta(
 		ctx,

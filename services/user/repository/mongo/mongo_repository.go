@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/panagiotisptr/hermes-messenger/libs/utils/entityutils"
+	"github.com/panagiotisptr/hermes-messenger/libs/utils/entityutils/filter"
 	"github.com/panagiotisptr/hermes-messenger/user/model"
 	"github.com/panagiotisptr/hermes-messenger/user/repository"
 	"go.mongodb.org/mongo-driver/bson"
@@ -20,7 +22,8 @@ const (
 )
 
 type MongoRepository struct {
-	coll   *mongo.Collection
+	coll *mongo.Collection
+	entityutils.RepoHelper
 	logger *zap.Logger
 }
 
@@ -28,7 +31,7 @@ func ProvideUserRepository(
 	lc fx.Lifecycle,
 	logger *zap.Logger,
 	database *mongo.Database,
-) repository.Repository {
+) repository.UserRepository {
 	repo := &MongoRepository{
 		logger: logger,
 		coll:   database.Collection(UserCollectionName),
@@ -61,29 +64,25 @@ func (r *MongoRepository) initIndexes(
 	return err
 }
 
-func (r *MongoRepository) Create(
+func (r *MongoRepository) Find(
 	ctx context.Context,
-	args model.UserDetails,
-) (*model.User, error) {
-	if args.Email == "" {
-		return nil, fmt.Errorf("email address is empty")
+	f filter.Filter,
+) ([]*model.User, error) {
+	users := []*model.User{}
+	cur, err := r.coll.Find(ctx, f.ToBSON())
+	if err = cur.All(ctx, &users); err != nil {
+		return users, err
 	}
 
-	u := &model.User{
-		ID:          uuid.New(),
-		UserDetails: args,
-	}
-	_, err := r.coll.InsertOne(ctx, u)
-
-	return u, err
+	return users, err
 }
 
-func (r *MongoRepository) Get(
+func (r *MongoRepository) FindOne(
 	ctx context.Context,
-	id uuid.UUID,
+	f filter.Filter,
 ) (*model.User, error) {
-	var u model.User
-	err := r.coll.FindOne(ctx, bson.M{"_id": id}).Decode(&u)
+	u := model.User{}
+	err := r.coll.FindOne(ctx, f.ToBSON()).Decode(&u)
 	if err == mongo.ErrNoDocuments {
 		return nil, nil
 	}
@@ -91,15 +90,65 @@ func (r *MongoRepository) Get(
 	return &u, err
 }
 
-func (r *MongoRepository) GetByEmail(
+func (r *MongoRepository) Create(
 	ctx context.Context,
-	email string,
+	args *model.User,
 ) (*model.User, error) {
-	var u model.User
-	err := r.coll.FindOne(ctx, bson.M{"Email": email}).Decode(&u)
-	if err == mongo.ErrNoDocuments {
-		return nil, nil
+	if args.Email == "" {
+		return nil, fmt.Errorf("email address is empty")
 	}
 
-	return &u, nil
+	u := args
+	id := uuid.New()
+	u.ID = &id
+	u.Meta = entityutils.Meta{}
+	r.RepoHelper.UpdateMeta(
+		ctx,
+		&u.Meta,
+		entityutils.CreateOp,
+	)
+
+	_, err := r.coll.InsertOne(ctx, u)
+
+	return u, err
+}
+
+func (r *MongoRepository) Update(
+	ctx context.Context,
+	f filter.Filter,
+	args *model.User,
+) ([]*model.User, error) {
+	users := []*model.User{}
+	b, err := bson.Marshal(args)
+	if err != nil {
+		return users, err
+	}
+	data := bson.M{}
+	err = bson.Unmarshal(b, &data)
+	if err != nil {
+		return users, err
+	}
+	_, err = r.coll.UpdateMany(
+		ctx,
+		f.ToBSON(),
+		bson.M{"$set": data},
+	)
+	if err != nil {
+		return users, err
+	}
+
+	return r.Find(ctx, f)
+}
+
+func (r *MongoRepository) Delete(
+	ctx context.Context,
+	f filter.Filter,
+) ([]*model.User, error) {
+	users, err := r.Find(ctx, f)
+	if err != nil {
+		return users, err
+	}
+	_, err = r.coll.DeleteMany(ctx, f.ToBSON())
+
+	return users, err
 }

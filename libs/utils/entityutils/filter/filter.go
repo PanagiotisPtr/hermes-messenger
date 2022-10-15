@@ -1,5 +1,7 @@
 package filter
 
+import "go.mongodb.org/mongo-driver/bson"
+
 type Operation int64
 
 const (
@@ -69,4 +71,27 @@ func (f *Filter) Match(
 	}
 
 	return true
+}
+
+func (f *Filter) ToBSON() bson.M {
+	rv := bson.M{}
+	for field, param := range f.Params {
+		if _, ok := rv["$and"]; !ok {
+			rv["$and"] = bson.M{}
+		}
+		curr := rv["$and"].(map[string]interface{})
+		if field == "id" {
+			field = "_id"
+		}
+		switch param.Op {
+		case Eq:
+			curr[field] = bson.M{"$eq": param.Value}
+		case NotEq:
+			curr[field] = bson.M{"$ne": param.Value}
+		case In:
+			curr[field] = bson.M{"$in": param.Value}
+		}
+	}
+
+	return rv
 }
