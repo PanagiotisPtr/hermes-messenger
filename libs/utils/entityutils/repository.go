@@ -36,7 +36,7 @@ func (rh *RepoHelper) UpdateMeta(
 	m *Meta,
 	op OperationType,
 ) error {
-	userId, ok := ctx.Value("userId").(*uuid.UUID)
+	userId, ok := ctx.Value("userId").(uuid.UUID)
 	if !ok {
 		return fmt.Errorf("missing userId from context")
 	}
@@ -45,13 +45,15 @@ func (rh *RepoHelper) UpdateMeta(
 	switch op {
 	case CreateOp:
 		m.CreatedAt = &now
-		m.CreatedBy = userId
+		m.CreatedBy = &userId
+		m.UpdatedAt = &now
+		m.UpdatedBy = &userId
 	case UpdateOp:
 		m.UpdatedAt = &now
-		m.UpdatedBy = userId
+		m.UpdatedBy = &userId
 	case DeleteOp:
 		m.DeletedAt = &now
-		m.DeletedBy = userId
+		m.DeletedBy = &userId
 	default:
 		return fmt.Errorf("unknown operation type")
 	}

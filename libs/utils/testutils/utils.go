@@ -42,6 +42,21 @@ func Assert[T any](
 	return nil
 }
 
+func AssertEqual(
+	name string,
+	a interface{},
+	b interface{},
+) error {
+	return Assert(
+		name,
+		a,
+		b,
+		func(a, b interface{}) bool {
+			return a == b
+		},
+	)
+}
+
 func AssertNotNil[T any](
 	name string,
 	a *T,

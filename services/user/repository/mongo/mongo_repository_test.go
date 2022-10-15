@@ -6,7 +6,7 @@ import (
 
 	"github.com/panagiotisptr/hermes-messenger/libs/utils/mongoutils"
 	"github.com/panagiotisptr/hermes-messenger/user/config"
-	"github.com/panagiotisptr/hermes-messenger/user/model"
+	"github.com/panagiotisptr/hermes-messenger/user/repository/testcases"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxtest"
@@ -59,9 +59,10 @@ func TestCreate(t *testing.T) {
 		mongoDb,
 	)
 
-	user := model.UserDetails{}
-	u, err := repo.Create(
-		context.Background(),
-		user,
-	)
+	testcases := testcases.CreateTestcases(repo)
+
+	lifecycle.RequireStart()
+	for _, tc := range testcases {
+		t.Run(tc.Name, tc.RunFunc())
+	}
 }

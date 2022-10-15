@@ -44,13 +44,20 @@ func ProvideConfig() (*Config, error) {
 	configFilename := *flag.String("config", "config.dev.yml", "configuration file")
 	flag.Parse()
 
-	if os.Getenv("CONFIG_FILE") != "" {
-		configFilename = os.Getenv("CONFIG_FILE")
+	if os.Getenv("CONFIG") != "" {
+		configFilename = os.Getenv("CONFIG")
 	}
 
 	return loadConfig(configFilename)
 }
 
 func ProvideTestConfig() (*Config, error) {
-	return loadConfig("config.test.yml")
+	configFilename := *flag.String("test-config", "config.test.yml", "configuration file")
+	flag.Parse()
+
+	if os.Getenv("TEST_CONFIG") != "" {
+		configFilename = os.Getenv("TEST_CONFIG")
+	}
+
+	return loadConfig(configFilename)
 }
