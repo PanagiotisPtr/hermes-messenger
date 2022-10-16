@@ -61,6 +61,11 @@ func CreateTestcases(
 		"userId",
 		uuid.New(),
 	)
+	ctx = context.WithValue(
+		ctx,
+		"requestId",
+		uuid.New(),
+	)
 	testcases := []testutils.Testcase[
 		CreateTestcaseInput,
 		CreateTestcaseOutput,
