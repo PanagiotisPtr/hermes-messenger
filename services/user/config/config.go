@@ -1,48 +1,63 @@
 package config
 
 import (
-	"strings"
+	"flag"
+	"os"
 
-	elasticsearch "github.com/elastic/go-elasticsearch/v8"
 	"github.com/go-redis/redis/v9"
-	"github.com/panagiotisptr/hermes-messenger/libs/utils"
 	"github.com/panagiotisptr/hermes-messenger/libs/utils/mongoutils"
+	"github.com/spf13/viper"
 )
+
+type ServiceConfig struct {
+	Port           int
+	GRPCReflection bool
+}
 
 // Application config
 type Config struct {
-	ListenPort     int
-	GRPCReflection bool
-	Redis          *redis.Options
-	ESConfig       elasticsearch.Config
-	MongoConfig    mongoutils.MongoConfig
+	Service ServiceConfig
+	Redis   *redis.Options
+	Mongo   mongoutils.Config
+}
+
+// loadConfig loads the configuration from a file
+func loadConfig(filename string) (*Config, error) {
+	viper.SetConfigFile(filename)
+	viper.AddConfigPath(".")
+
+	var config Config
+
+	if err := viper.ReadInConfig(); err != nil {
+		return nil, err
+	}
+
+	if err := viper.Unmarshal(&config); err != nil {
+		return nil, err
+	}
+
+	return &config, nil
 }
 
 // Provides the application config
-func ProvideConfig() *Config {
-	listenPort := utils.GetEnvVariableInt("LISTEN_PORT", 80)
-	redisAddress := utils.GetEnvVariableString("REDIS_ADDRESS", "localhost:6379")
-	redisPassword := utils.GetEnvVariableString("REDIS_PASSWORD", "")
-	redisDatabase := utils.GetEnvVariableInt("REDIS_DB", 0)
-	grpcReflection := utils.GetEnvVariableBool("GRPC_REFLECTION", false)
-	esAddresses := utils.GetEnvVariableString("ES_ADDRESSES", "http://localhost:9200")
-	mongoUri := utils.GetEnvVariableString("MONGO_URI", "mongodb://localhost:27017")
-	mongoDb := utils.GetEnvVariableString("MONGO_DB", "user")
+func ProvideConfig() (*Config, error) {
+	configFilename := *flag.String("config", "config.dev.yml", "configuration file")
+	flag.Parse()
 
-	return &Config{
-		ListenPort:     listenPort,
-		GRPCReflection: grpcReflection,
-		Redis: &redis.Options{
-			Addr:     redisAddress,
-			Password: redisPassword,
-			DB:       redisDatabase,
-		},
-		ESConfig: elasticsearch.Config{
-			Addresses: strings.Split(esAddresses, ","),
-		},
-		MongoConfig: mongoutils.MongoConfig{
-			MongoUri: mongoUri,
-			MongoDb:  mongoDb,
-		},
+	if os.Getenv("CONFIG") != "" {
+		configFilename = os.Getenv("CONFIG")
 	}
+
+	return loadConfig(configFilename)
+}
+
+func ProvideTestConfig() (*Config, error) {
+	configFilename := *flag.String("test-config", "config.test.yml", "configuration file")
+	flag.Parse()
+
+	if os.Getenv("TEST_CONFIG") != "" {
+		configFilename = os.Getenv("TEST_CONFIG")
+	}
+
+	return loadConfig(configFilename)
 }

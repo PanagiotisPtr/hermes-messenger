@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"net"
 
-	elasticsearch "github.com/elastic/go-elasticsearch/v8"
 	"github.com/go-redis/redis/v9"
 	"github.com/panagiotisptr/hermes-messenger/libs/utils/mongoutils"
 	"github.com/panagiotisptr/hermes-messenger/protos"
 	"github.com/panagiotisptr/hermes-messenger/user/config"
+	mongo_repository "github.com/panagiotisptr/hermes-messenger/user/repository/mongo"
 	"github.com/panagiotisptr/hermes-messenger/user/server"
-	"github.com/panagiotisptr/hermes-messenger/user/server/user"
+	"github.com/panagiotisptr/hermes-messenger/user/service"
+
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxevent"
@@ -23,21 +24,17 @@ import (
 
 // Provides the GRPC server instance
 func ProvideGRPCServer(
-	us *server.UserServer,
+	us *server.Server,
 	cfg *config.Config,
 ) (*grpc.Server, error) {
 	gs := grpc.NewServer()
-	protos.RegisterUserServer(gs, us)
+	protos.RegisterUserServiceServer(gs, us)
 
-	if cfg.GRPCReflection {
+	if cfg.Service.GRPCReflection {
 		reflection.Register(gs)
 	}
 
 	return gs, nil
-}
-
-func ProvideElasticsearchClient(cfg *config.Config) (*elasticsearch.Client, error) {
-	return elasticsearch.NewClient(cfg.ESConfig)
 }
 
 func ProvideRedisClient(cfg *config.Config) *redis.Client {
@@ -46,8 +43,8 @@ func ProvideRedisClient(cfg *config.Config) *redis.Client {
 
 func ProvideMongoConfig(
 	cfg *config.Config,
-) *mongoutils.MongoConfig {
-	return &cfg.MongoConfig
+) *mongoutils.Config {
+	return &cfg.Mongo
 }
 
 // Bootstraps the application
@@ -62,7 +59,7 @@ func Bootstrap(
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
 			logger.Sugar().Info("Starting GRPC server.")
-			addr := fmt.Sprintf(":%d", cfg.ListenPort)
+			addr := fmt.Sprintf(":%d", cfg.Service.Port)
 			list, err := net.Listen("tcp", addr)
 			if err != nil {
 				return err
@@ -99,8 +96,8 @@ func main() {
 			mongoutils.ProvideMongoDatabase,
 			config.ProvideConfig,
 			server.ProvideUserServer,
-			user.ProvideUserService,
-			user.ProvideMongoRepository,
+			service.ProvideUserService,
+			mongo_repository.ProvideUserRepository,
 			ProvideGRPCServer,
 		),
 		fx.Invoke(Bootstrap),
