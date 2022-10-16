@@ -36,7 +36,7 @@ func (rh *RepoHelper) UpdateMeta(
 	m *Meta,
 	op OperationType,
 ) error {
-	userId, ok := ctx.Value("userId").(uuid.UUID)
+	userId, ok := ctx.Value("user-id").(uuid.UUID)
 	if !ok {
 		return fmt.Errorf("missing userId from context")
 	}

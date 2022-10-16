@@ -58,12 +58,12 @@ func CreateTestcases(
 ) []testutils.Testcase[CreateTestcaseInput, CreateTestcaseOutput] {
 	ctx := context.WithValue(
 		context.Background(),
-		"userId",
+		"user-id",
 		uuid.New(),
 	)
 	ctx = context.WithValue(
 		ctx,
-		"requestId",
+		"request-id",
 		uuid.New(),
 	)
 	testcases := []testutils.Testcase[
@@ -105,7 +105,7 @@ func CreateTestcases(
 				); err != nil {
 					return err
 				}
-				userId, ok := ctx.Value("userId").(uuid.UUID)
+				userId, ok := ctx.Value("user-id").(uuid.UUID)
 				if err := testutils.AssertEqual(
 					"userId exists",
 					ok,

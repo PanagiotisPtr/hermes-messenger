@@ -11,14 +11,14 @@ func LoggerWithRequestID(
 	ctx context.Context,
 	l *zap.Logger,
 ) *zap.Logger {
-	requestId, ok := ctx.Value("requestId").(uuid.UUID)
+	requestId, ok := ctx.Value("request-id").(uuid.UUID)
 	if !ok {
 		return l.With(
-			zap.String("requestId", "none"),
+			zap.String("request-id", "none"),
 		)
 	}
 
 	return l.With(
-		zap.String("requestId", requestId.String()),
+		zap.String("request-id", requestId.String()),
 	)
 }
