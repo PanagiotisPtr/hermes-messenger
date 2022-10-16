@@ -3,9 +3,9 @@ module github.com/panagiotisptr/hermes-messenger/libs/service
 go 1.18
 
 require (
-	github.com/hashicorp/consul v1.12.1
-	github.com/hashicorp/consul/api v1.12.0
-	google.golang.org/grpc v1.36.0
+	github.com/hashicorp/consul v1.12.5
+	github.com/hashicorp/consul/api v1.13.1
+	google.golang.org/grpc v1.37.1
 )
 
 require (
@@ -21,7 +21,7 @@ require (
 	github.com/golang/protobuf v1.4.3 // indirect
 	github.com/google/btree v1.0.0 // indirect
 	github.com/hashicorp/consul-net-rpc v0.0.0-20220307172752-3602954411b4 // indirect
-	github.com/hashicorp/consul/sdk v0.9.0 // indirect
+	github.com/hashicorp/consul/sdk v0.10.0 // indirect
 	github.com/hashicorp/errwrap v1.0.0 // indirect
 	github.com/hashicorp/go-bexpr v0.1.2 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.1 // indirect
@@ -36,10 +36,10 @@ require (
 	github.com/hashicorp/go-uuid v1.0.2 // indirect
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
-	github.com/hashicorp/memberlist v0.3.1 // indirect
+	github.com/hashicorp/memberlist v0.4.0 // indirect
 	github.com/hashicorp/raft v1.3.6 // indirect
 	github.com/hashicorp/raft-autopilot v0.1.6 // indirect
-	github.com/hashicorp/serf v0.9.7 // indirect
+	github.com/hashicorp/serf v0.10.0 // indirect
 	github.com/hashicorp/yamux v0.0.0-20210826001029-26ff87cf9493 // indirect
 	github.com/mattn/go-colorable v0.1.6 // indirect
 	github.com/mattn/go-isatty v0.0.12 // indirect
@@ -64,7 +64,7 @@ require (
 	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a // indirect
 	golang.org/x/net v0.0.0-20211216030914-fe4d6282115f // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
-	golang.org/x/sys v0.0.0-20220412211240-33da011f77ad // indirect
+	golang.org/x/sys v0.0.0-20220728004956-3c1f35247d10 // indirect
 	golang.org/x/text v0.3.6 // indirect
 	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e // indirect
 	google.golang.org/genproto v0.0.0-20200623002339-fbb79eadd5eb // indirect
