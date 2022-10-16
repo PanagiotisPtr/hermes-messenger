@@ -1,0 +1,26 @@
+name: User Service PR Checks
+
+on:
+  pull_request:
+    paths:
+      - 'services/user/**'
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.19
+
+      - name: Build
+        working-directory: ./services/user
+        run: go build -o user cmd/user/main.go
+
+      - name: Test
+        working-directory: ./services/user
+        run: TEST_CONFIG=$(pwd)/config.test.yml go test -count=1 ./...
