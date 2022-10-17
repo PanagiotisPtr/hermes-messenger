@@ -1,0 +1,57 @@
+name: User Service PR Checks
+
+on:
+  pull_request:
+    paths:
+      - 'services/user/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.19
+
+      - name: Install git
+        run: sudo apt-get install git
+
+      - name: Install make
+        run: sudo apt-get install make
+
+      - name: Install protoc
+        run: sudo apt-get install protobuf-compiler
+
+      - name: Install protoc-gen-go
+        run: go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+
+      - name: Install protoc-gen-go-grpc
+        run: go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+
+      - name: Make protos
+        run: make protos-go
+
+      - name: Mod tidy
+        working-directory: ./services/user
+        run: go mod tidy
+
+      - name: Give run permissions to run script
+        working-directory: ./services/user
+        run: chmod +x generate_config.sh
+
+      - name: Generate test config
+        working-directory: ./services/user
+        env:
+          MONGO_URI: ${{ secrets.MONGO_TEST_URI }}
+        run: ./generate_config.sh > config.test.yml
+
+      - name: Build
+        working-directory: ./services/user
+        run: go build -o user cmd/user/main.go
+
+      - name: Test
+        working-directory: ./services/user
+        run: TEST_CONFIG=$(pwd)/config.test.yml go test -count=1 ./...
