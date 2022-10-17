@@ -2,7 +2,6 @@ package config
 
 import (
 	"flag"
-	"fmt"
 	"os"
 
 	"github.com/go-redis/redis/v9"
@@ -60,9 +59,5 @@ func ProvideTestConfig() (*Config, error) {
 		configFilename = os.Getenv("TEST_CONFIG")
 	}
 
-	cfg, err := loadConfig(configFilename)
-
-	panic(fmt.Errorf("MONGO_URI: %s", cfg.Mongo.Uri))
-
-	return cfg, err
+	return loadConfig(configFilename)
 }
