@@ -5,6 +5,9 @@ on:
     paths:
       - 'services/user/**'
 
+env:
+  MONGO_URI: ${{ secrets.MongoTestUri }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -37,6 +40,14 @@ jobs:
       - name: Mod tidy
         working-directory: ./services/user
         run: go mod tidy
+
+      - name: Give run permissions to run script
+        working-directory: ./services/user
+        run: chmod +x generate_config.sh
+
+      - name: Generate test config
+        working-directory: ./services/user
+        run: ./generate_config.sh > config.test.yml
 
       - name: Build
         working-directory: ./services/user
