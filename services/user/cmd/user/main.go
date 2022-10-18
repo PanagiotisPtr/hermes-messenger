@@ -42,6 +42,7 @@ func ProvideRedisClient(cfg *config.Config) *redis.Client {
 	return redis.NewClient(cfg.Redis)
 }
 
+// ProvideMongoConfig provides mongo config
 func ProvideMongoConfig(
 	cfg *config.Config,
 ) *mongoutils.Config {
