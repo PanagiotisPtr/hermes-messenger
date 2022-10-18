@@ -37,7 +37,7 @@ func ProvideGRPCServer(
 	return gs, nil
 }
 
-// ProvideRedisClient Provides Redis Client
+// ProvideRedisClient provides redis client
 func ProvideRedisClient(cfg *config.Config) *redis.Client {
 	return redis.NewClient(cfg.Redis)
 }
