@@ -1,8 +1,6 @@
 # Hermes Messenger
 Hermes-messeneger is an instant messaging application that's built using microservices in Go.
 
-In addition to using microservices, this project also uses Consul service mesh to do things like parameter sharing, service discory etc. The services communicate with each other through gRPC.
-
 This is still work in progress
 
 ## Services
