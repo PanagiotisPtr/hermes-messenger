@@ -23,8 +23,7 @@ const (
 )
 
 type MongoRepository struct {
-	coll *mongo.Collection
-	entityutils.RepoHelper
+	coll   *mongo.Collection
 	logger *zap.Logger
 }
 
@@ -57,7 +56,7 @@ func (r *MongoRepository) initIndexes(
 	_, err := r.coll.Indexes().CreateMany(ctx,
 		[]mongo.IndexModel{
 			{
-				Keys: bson.D{{Key: "Email", Value: 1}},
+				Keys: bson.D{{Key: "email", Value: 1}},
 				Options: options.Index().
 					SetUnique(true).
 					SetName(UserEmailIndex),
@@ -131,9 +130,8 @@ func (r *MongoRepository) Create(
 	id := uuid.New()
 	u.ID = &id
 	u.Meta = entityutils.Meta{}
-	r.RepoHelper.UpdateMeta(
+	u.UpdateMeta(
 		ctx,
-		&u.Meta,
 		entityutils.CreateOp,
 	)
 

@@ -15,8 +15,7 @@ import (
 )
 
 type MemoryRepository struct {
-	users []*model.User
-	entityutils.RepoHelper
+	users  []*model.User
 	logger *zap.Logger
 }
 
@@ -24,8 +23,7 @@ func ProvideUserRepository(
 	logger *zap.Logger,
 ) repository.UserRepository {
 	return &MemoryRepository{
-		users:      make([]*model.User, 0),
-		RepoHelper: entityutils.RepoHelper{},
+		users: make([]*model.User, 0),
 		logger: logger.With(
 			zap.String("repository", "UserRepository"),
 			zap.String("type", "memory"),
@@ -119,9 +117,8 @@ func (r *MemoryRepository) Create(
 	id := uuid.New()
 	newUser.ID = &id
 	newUser.Meta = entityutils.Meta{}
-	r.RepoHelper.UpdateMeta(
+	newUser.UpdateMeta(
 		ctx,
-		&newUser.Meta,
 		entityutils.CreateOp,
 	)
 	r.users = append(r.users, newUser)
@@ -164,9 +161,8 @@ func (r *MemoryRepository) Update(
 			newU := *args
 			newU.ID = u.ID
 			newU.Meta = u.Meta
-			r.RepoHelper.UpdateMeta(
+			newU.UpdateMeta(
 				ctx,
-				&newU.Meta,
 				entityutils.UpdateOp,
 			)
 			r.users[i] = &newU
