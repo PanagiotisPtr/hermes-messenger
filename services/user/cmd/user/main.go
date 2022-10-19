@@ -68,7 +68,6 @@ func Bootstrap(
 			} else {
 				logger.Sugar().Info("Listening on " + addr)
 			}
-
 			go gs.Serve(list)
 
 			return nil
