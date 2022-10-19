@@ -11,8 +11,8 @@ import (
 	"go.uber.org/zap"
 )
 
-// Service represents a user service
-type Service struct {
+// UserService represents a user service
+type UserService struct {
 	logger   *zap.Logger
 	userRepo repository.UserRepository
 }
@@ -22,15 +22,15 @@ type Service struct {
 func ProvideUserService(
 	logger *zap.Logger,
 	userRepo repository.UserRepository,
-) *Service {
-	return &Service{
+) *UserService {
+	return &UserService{
 		logger:   logger,
 		userRepo: userRepo,
 	}
 }
 
 // CreateUser creates a new user
-func (s *Service) CreateUser(
+func (s *UserService) CreateUser(
 	ctx context.Context,
 	args *model.User,
 ) (*model.User, error) {
@@ -38,7 +38,7 @@ func (s *Service) CreateUser(
 }
 
 // GetUser returns a user from their (uu)id
-func (s *Service) GetUser(
+func (s *UserService) GetUser(
 	ctx context.Context,
 	id uuid.UUID,
 ) (*model.User, error) {
@@ -48,7 +48,7 @@ func (s *Service) GetUser(
 	return s.userRepo.FindOne(ctx, f)
 }
 
-func (s *Service) GetUserByEmail(
+func (s *UserService) GetUserByEmail(
 	ctx context.Context,
 	email string,
 ) (*model.User, error) {

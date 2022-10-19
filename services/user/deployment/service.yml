@@ -6,11 +6,11 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app: user-service
+      app: user-server
   template:
     metadata:
       labels:
-        app: user-service
+        app: user-server
     spec:
       containers:
       - name: user-deployment
@@ -43,4 +43,4 @@ spec:
     port: 80
     targetPort: 80
   selector:
-    app: user-service
+    app: user-server
