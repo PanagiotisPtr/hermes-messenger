@@ -24,7 +24,7 @@ import (
 
 // Provides the GRPC server instance
 func ProvideGRPCServer(
-	us *server.Server,
+	us *server.UserServer,
 	cfg *config.Config,
 ) (*grpc.Server, error) {
 	gs := grpc.NewServer()

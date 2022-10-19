@@ -14,19 +14,19 @@ import (
 	"github.com/google/uuid"
 )
 
-// Server represents a server that can be used for the grpc user service
-type Server struct {
+// UserServer represents a server that can be used for the grpc user service
+type UserServer struct {
 	logger  *zap.Logger
-	service *service.Service
+	service *service.UserService
 	protos.UnimplementedUserServiceServer
 }
 
 // ProvideUserServer provides a user service server
 func ProvideUserServer(
 	logger *zap.Logger,
-	service *service.Service,
-) (*Server, error) {
-	return &Server{
+	service *service.UserService,
+) (*UserServer, error) {
+	return &UserServer{
 		logger:  logger,
 		service: service,
 	}, nil
@@ -63,7 +63,7 @@ func metadataToContext(ctx context.Context, keys ...string) (context.Context, er
 }
 
 // CreateUser creates a new user
-func (us *Server) CreateUser(
+func (us *UserServer) CreateUser(
 	ctx context.Context,
 	request *protos.CreateUserRequest,
 ) (*protos.CreateUserResponse, error) {
@@ -88,7 +88,7 @@ func (us *Server) CreateUser(
 }
 
 // GetUser finds a user by their (uu)id - returns nil if not found
-func (us *Server) GetUser(
+func (us *UserServer) GetUser(
 	ctx context.Context,
 	request *protos.GetUserRequest,
 ) (*protos.GetUserResponse, error) {
@@ -116,7 +116,7 @@ func (us *Server) GetUser(
 }
 
 // GetUser finds a user by their email - returns nil if not found
-func (us *Server) GetUserByEmail(
+func (us *UserServer) GetUserByEmail(
 	ctx context.Context,
 	request *protos.GetUserByEmailRequest,
 ) (*protos.GetUserByEmailResponse, error) {
