@@ -61,6 +61,7 @@ func Bootstrap(
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
 			logger.Sugar().Info("Starting GRPC server.")
+
 			addr := fmt.Sprintf(":%d", cfg.Service.Port)
 			list, err := net.Listen("tcp", addr)
 			if err != nil {
@@ -68,6 +69,7 @@ func Bootstrap(
 			} else {
 				logger.Sugar().Info("Listening on " + addr)
 			}
+
 			go gs.Serve(list)
 
 			return nil
