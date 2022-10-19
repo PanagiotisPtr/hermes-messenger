@@ -6,6 +6,83 @@ on:
       - 'services/user/**'
 
 jobs:
+  misspell:
+    name: misspell
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: misspell
+        uses: reviewdog/action-misspell@v1
+        with:
+          github_token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          locale: "UK"
+
+  golangci-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v3
+
+      - name: golangci-lint
+        uses: reviewdog/action-golangci-lint@v2
+        with:
+          github_token: ${{ secrets.REPO_ACCESS_TOKEN }}
+
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 10
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.19
+
+      - name: Install git
+        run: sudo apt-get install git
+
+      - name: Install make
+        run: sudo apt-get install make
+
+      - name: Install protoc
+        run: sudo apt-get install protobuf-compiler
+
+      - name: Install protoc-gen-go
+        run: go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+
+      - name: Install protoc-gen-go-grpc
+        run: go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+
+      - name: Make protos
+        run: make protos-go
+
+      - name: Mod tidy
+        working-directory: ./services/user
+        run: go mod tidy
+
+      - name: Give run permissions to run script
+        working-directory: ./services/user
+        run: chmod +x generate_config.sh
+
+      - name: Generate test config
+        working-directory: ./services/user
+        env:
+          MONGO_URI: ${{ secrets.MONGO_TEST_URI }}
+        run: ./generate_config.sh > config.test.yml
+
+      - name: Set config env
+        working-directory: ./services/user
+        run: echo "TEST_CONFIG=$(pwd)/config.test.yml" >> $GITHUB_ENV
+
+      - uses: gwatts/go-coverage-action@v1
+        id: coverage
+        with:
+          working-directory: ./services/user
+          coverage-threshold: 0
+
   build:
     runs-on: ubuntu-latest
     steps:
