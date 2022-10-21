@@ -6,7 +6,8 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/panagiotisptr/hermes-messenger/friends/server/connection"
+	"github.com/panagiotisptr/hermes-messenger/friends/model"
+	"github.com/panagiotisptr/hermes-messenger/friends/repository"
 	"github.com/panagiotisptr/hermes-messenger/protos"
 	"go.uber.org/zap"
 )
@@ -18,18 +19,18 @@ type Friend struct {
 
 type Service struct {
 	logger     *zap.Logger
-	connRepo   connection.Repository
-	userClient protos.UserClient
+	friendRepo repository.FriendRepository
+	userClient protos.UserServiceClient
 }
 
 func ProvideFriendsService(
 	logger *zap.Logger,
-	connRepo connection.Repository,
-	userClient protos.UserClient,
+	friendRepo repository.FriendRepository,
+	userClient protos.UserServiceClient,
 ) *Service {
 	return &Service{
 		logger:     logger,
-		connRepo:   connRepo,
+		friendRepo: friendRepo,
 		userClient: userClient,
 	}
 }
@@ -38,7 +39,7 @@ func ProvideFriendsService(
 func (s *Service) usersExists(ctx context.Context, ids []uuid.UUID) error {
 	for _, id := range ids {
 		userResp, err := s.userClient.GetUser(ctx, &protos.GetUserRequest{
-			Uuid: id.String(),
+			Id: id.String(),
 		})
 		if err != nil {
 			return err
@@ -51,17 +52,16 @@ func (s *Service) usersExists(ctx context.Context, ids []uuid.UUID) error {
 	return nil
 }
 
-func (s *Service) AddFriend(
+func (s *Service) CreateFriend(
 	ctx context.Context,
-	userUuid uuid.UUID,
-	friendUuid uuid.UUID,
-) error {
+	args *model.Friend,
+) (*model.Friend, error) {
 	// Check that both users exist
-	if err := s.usersExists(ctx, []uuid.UUID{userUuid, friendUuid}); err != nil {
-		return err
+	if err := s.usersExists(ctx, []uuid.UUID{args.UserID, args.FriendID}); err != nil {
+		return nil, err
 	}
 
-	return s.connRepo.AddConnection(ctx, userUuid, friendUuid)
+	return s.friendRepo.Create(ctx, args)
 }
 
 func (s *Service) RemoveFriend(
@@ -74,7 +74,7 @@ func (s *Service) RemoveFriend(
 		return err
 	}
 
-	return s.connRepo.RemoveConnection(ctx, userUuid, friendUuid)
+	return s.friendRepo.RemoveConnection(ctx, userUuid, friendUuid)
 }
 
 func (s *Service) GetFriends(
@@ -86,12 +86,12 @@ func (s *Service) GetFriends(
 	if err := s.usersExists(ctx, []uuid.UUID{userUuid}); err != nil {
 		return fs, err
 	}
-	connections, err := s.connRepo.GetConnections(ctx, userUuid)
+	friends, err := s.friendRepo.GetConnections(ctx, userUuid)
 	if err != nil {
 		return fs, err
 	}
 
-	for _, c := range connections {
+	for _, c := range friends {
 		friendUuid := c.From
 		if friendUuid == userUuid {
 			friendUuid = c.To

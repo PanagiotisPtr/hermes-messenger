@@ -6,7 +6,7 @@ import (
 
 	"github.com/panagiotisptr/hermes-messenger/libs/utils/mongoutils"
 	"github.com/panagiotisptr/hermes-messenger/user/config"
-	"github.com/panagiotisptr/hermes-messenger/user/repository/testcases"
+	testcases "github.com/panagiotisptr/hermes-messenger/user/repository/testcases/user"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxtest"

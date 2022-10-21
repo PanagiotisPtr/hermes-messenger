@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/panagiotisptr/hermes-messenger/user/repository"
-	"github.com/panagiotisptr/hermes-messenger/user/repository/testcases"
+	testcases "github.com/panagiotisptr/hermes-messenger/user/repository/testcases/user"
 	"go.uber.org/zap"
 )
 

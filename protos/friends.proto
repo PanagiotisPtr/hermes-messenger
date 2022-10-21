@@ -8,6 +8,10 @@ service Friends {
   rpc GetFriends(GetFriendsRequest) returns (GetFriendsResponse);
 }
 
+message Friend {
+
+}
+
 message AddFriendRequest {
   string UserUuid = 1;
   string FriendUuid = 2;

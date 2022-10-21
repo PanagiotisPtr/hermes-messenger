@@ -6,26 +6,26 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/panagiotisptr/hermes-messenger/friends/model"
+	"github.com/panagiotisptr/hermes-messenger/friends/repository"
 	"github.com/panagiotisptr/hermes-messenger/libs/utils/entityutils"
 	"github.com/panagiotisptr/hermes-messenger/libs/utils/entityutils/filter"
 	"github.com/panagiotisptr/hermes-messenger/libs/utils/loggingutils"
-	"github.com/panagiotisptr/hermes-messenger/user/model"
-	"github.com/panagiotisptr/hermes-messenger/user/repository"
 	"go.uber.org/zap"
 )
 
 type MemoryRepository struct {
-	users  []*model.User
-	logger *zap.Logger
+	friends []*model.Friend
+	logger  *zap.Logger
 }
 
-func ProvideUserRepository(
+func ProvideFriendRepository(
 	logger *zap.Logger,
-) repository.UserRepository {
+) repository.FriendRepository {
 	return &MemoryRepository{
-		users: make([]*model.User, 0),
+		friends: make([]*model.Friend, 0),
 		logger: logger.With(
-			zap.String("repository", "UserRepository"),
+			zap.String("repository", "FriendRepository"),
 			zap.String("type", "memory"),
 		),
 	}
@@ -34,8 +34,8 @@ func ProvideUserRepository(
 func (r *MemoryRepository) Find(
 	ctx context.Context,
 	f filter.Filter,
-) (<-chan *model.User, error) {
-	ch := make(chan *model.User)
+) (<-chan *model.Friend, error) {
+	ch := make(chan *model.Friend)
 	l := loggingutils.
 		LoggerWithRequestID(ctx, r.logger).
 		With(
@@ -43,11 +43,11 @@ func (r *MemoryRepository) Find(
 		).Sugar()
 	go func() {
 		defer close(ch)
-		for _, u := range r.users {
-			b, err := json.Marshal(u)
+		for _, friend := range r.friends {
+			b, err := json.Marshal(friend)
 			if err != nil {
 				l.Error(
-					"marshalling user",
+					"marshalling friend",
 					err,
 				)
 			}
@@ -55,12 +55,12 @@ func (r *MemoryRepository) Find(
 			err = json.Unmarshal(b, &m)
 			if err != nil {
 				l.Error(
-					"unmarshalling user",
+					"unmarshalling friend",
 					err,
 				)
 			}
 			if f.Match(m) {
-				ch <- u
+				ch <- friend
 			}
 		}
 	}()
@@ -71,27 +71,19 @@ func (r *MemoryRepository) Find(
 func (r *MemoryRepository) FindOne(
 	ctx context.Context,
 	f filter.Filter,
-) (*model.User, error) {
+) (*model.Friend, error) {
 	l := loggingutils.
 		LoggerWithRequestID(ctx, r.logger).
 		With(
 			zap.String("method", "FindOne"),
 		).Sugar()
-	for _, u := range r.users {
-		b, err := json.Marshal(u)
-		if err != nil {
-			l.Error("marshalling user", err)
-			return nil, err
-		}
-		m := map[string]interface{}{}
-		err = json.Unmarshal(b, &m)
-		if err != nil {
-			l.Error("unmarshalling user", err)
-			return nil, err
-		}
-		if f.Match(m) {
-			return u, nil
-		}
+	ch, err := r.Find(ctx, f)
+	if err != nil {
+		l.Error("failed to find friend", err)
+		return nil, err
+	}
+	for friend := range ch {
+		return friend, nil
 	}
 
 	return nil, nil
@@ -99,37 +91,34 @@ func (r *MemoryRepository) FindOne(
 
 func (r *MemoryRepository) Create(
 	ctx context.Context,
-	args *model.User,
-) (*model.User, error) {
-	if args.Email == "" {
-		return nil, fmt.Errorf("email cannot be empty")
-	}
+	args *model.Friend,
+) (*model.Friend, error) {
 	f := filter.NewFilter()
-	f.Add("email", filter.Eq, args.Email)
-	u, err := r.FindOne(ctx, f)
+	f.Add("friendId", filter.Eq, args.FriendID)
+	friend, err := r.FindOne(ctx, f)
 	if err != nil {
 		return nil, err
 	}
-	if u != nil {
-		return nil, fmt.Errorf("email already in use")
+	if friend != nil {
+		return nil, fmt.Errorf("connection between users already exists")
 	}
-	newUser := args
+	newFriend := args
 	id := uuid.New()
-	newUser.ID = &id
-	newUser.Meta = entityutils.Meta{}
-	newUser.UpdateMeta(
+	newFriend.ID = &id
+	newFriend.Meta = entityutils.Meta{}
+	newFriend.UpdateMeta(
 		ctx,
 		entityutils.CreateOp,
 	)
-	r.users = append(r.users, newUser)
+	r.friends = append(r.friends, newFriend)
 
-	return newUser, nil
+	return newFriend, nil
 }
 
 func (r *MemoryRepository) Update(
 	ctx context.Context,
 	f filter.Filter,
-	args *model.User,
+	args *model.Friend,
 ) (int64, error) {
 	l := loggingutils.
 		LoggerWithRequestID(ctx, r.logger).
@@ -137,39 +126,39 @@ func (r *MemoryRepository) Update(
 			zap.String("method", "Update"),
 		).Sugar()
 	updated := int64(0)
-	users, err := r.Find(ctx, f)
+	friends, err := r.Find(ctx, f)
 	if err != nil {
 		return updated, err
 	}
 	ids := []uuid.UUID{}
-	for u := range users {
-		if u.ID == nil {
-			l.Error("found user with nil UUID", "filter:", f)
+	for friend := range friends {
+		if friend.ID == nil {
+			l.Error("found friend with nil UUID", "filter:", f)
 		}
-		ids = append(ids, *u.ID)
+		ids = append(ids, *friend.ID)
 	}
 
-	newUsers := []*model.User{}
-	for i, u := range r.users {
+	newFriends := []*model.Friend{}
+	for i, friend := range r.friends {
 		match := false
 		for _, id := range ids {
-			if u.ID != nil && *u.ID == id {
+			if friend.ID != nil && *friend.ID == id {
 				match = true
 			}
 		}
 		if match {
-			newU := *args
-			newU.ID = u.ID
-			newU.Meta = u.Meta
-			newU.UpdateMeta(
+			newF := *args
+			newF.ID = friend.ID
+			newF.Meta = friend.Meta
+			newF.UpdateMeta(
 				ctx,
 				entityutils.UpdateOp,
 			)
-			r.users[i] = &newU
+			r.friends[i] = &newF
 			updated++
 		}
 	}
-	r.users = newUsers
+	r.friends = newFriends
 
 	return updated, nil
 }
@@ -184,33 +173,33 @@ func (r *MemoryRepository) Delete(
 			zap.String("method", "Delete"),
 		).Sugar()
 	deleted := int64(0)
-	users, err := r.Find(ctx, f)
+	friends, err := r.Find(ctx, f)
 	if err != nil {
 		return deleted, err
 	}
 	ids := []uuid.UUID{}
-	for u := range users {
-		if u.ID == nil {
-			l.Error("found user with nil UUID", "filter:", f)
+	for friend := range friends {
+		if friend.ID == nil {
+			l.Error("found friend with nil UUID", "filter:", f)
 		}
-		ids = append(ids, *u.ID)
+		ids = append(ids, *friend.ID)
 	}
 
-	newUsers := []*model.User{}
-	for _, u := range r.users {
+	newFriends := []*model.Friend{}
+	for _, friend := range r.friends {
 		match := false
 		for _, id := range ids {
-			if u.ID != nil && *u.ID == id {
+			if friend.ID != nil && *friend.ID == id {
 				match = true
 			}
 		}
 		if !match {
-			newUsers = append(newUsers, u)
+			newFriends = append(newFriends, friend)
 		} else {
 			deleted++
 		}
 	}
-	r.users = newUsers
+	r.friends = newFriends
 
 	return deleted, nil
 }

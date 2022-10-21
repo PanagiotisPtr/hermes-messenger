@@ -2,14 +2,13 @@ package mongo
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/panagiotisptr/hermes-messenger/friends/model"
+	"github.com/panagiotisptr/hermes-messenger/friends/repository"
 	"github.com/panagiotisptr/hermes-messenger/libs/utils/entityutils"
 	"github.com/panagiotisptr/hermes-messenger/libs/utils/entityutils/filter"
 	"github.com/panagiotisptr/hermes-messenger/libs/utils/loggingutils"
-	"github.com/panagiotisptr/hermes-messenger/user/model"
-	"github.com/panagiotisptr/hermes-messenger/user/repository"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -18,8 +17,8 @@ import (
 )
 
 const (
-	UserCollectionName = "users"
-	UserEmailIndex     = "usres_email_index"
+	FriendCollectionName = "friends"
+	UserFriendIndex      = "user_friend_index"
 )
 
 type MongoRepository struct {
@@ -27,22 +26,22 @@ type MongoRepository struct {
 	logger *zap.Logger
 }
 
-func ProvideUserRepository(
+func ProvideFriendRepository(
 	lc fx.Lifecycle,
 	logger *zap.Logger,
 	database *mongo.Database,
-) repository.UserRepository {
+) repository.FriendRepository {
 	repo := &MongoRepository{
-		coll: database.Collection(UserCollectionName),
+		coll: database.Collection(FriendCollectionName),
 		logger: logger.With(
-			zap.String("repository", "UserRepository"),
+			zap.String("repository", "FriendRepository"),
 			zap.String("type", "mongo"),
 		),
 	}
 
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
-			repo.logger.Sugar().Info("initialising mongobd indexes for user repository")
+			repo.logger.Sugar().Info("initialising mongobd indexes for friend repository")
 			return repo.initIndexes(ctx)
 		},
 	})
@@ -56,10 +55,13 @@ func (r *MongoRepository) initIndexes(
 	_, err := r.coll.Indexes().CreateMany(ctx,
 		[]mongo.IndexModel{
 			{
-				Keys: bson.D{{Key: "email", Value: 1}},
+				Keys: bson.D{
+					{Key: "userId", Value: 1},
+					{Key: "friendId", Value: 1},
+				},
 				Options: options.Index().
 					SetUnique(true).
-					SetName(UserEmailIndex),
+					SetName(UserFriendIndex),
 			},
 		},
 	)
@@ -70,22 +72,22 @@ func (r *MongoRepository) initIndexes(
 func (r *MongoRepository) Find(
 	ctx context.Context,
 	f filter.Filter,
-) (<-chan *model.User, error) {
+) (<-chan *model.Friend, error) {
 	l := loggingutils.
 		LoggerWithRequestID(ctx, r.logger).
 		With(
 			zap.String("method", "Find"),
 		).Sugar()
-	ch := make(chan *model.User)
+	ch := make(chan *model.Friend)
 	go func() {
 		close(ch)
 		cur, err := r.coll.Find(ctx, f.ToBSON())
 		for cur.Next(ctx) {
-			var u *model.User
-			if err = cur.Decode(&u); err != nil {
-				l.Error("decoding bson to user", err)
+			var friend *model.Friend
+			if err = cur.Decode(&friend); err != nil {
+				l.Error("decoding bson to friend", err)
 			}
-			ch <- u
+			ch <- friend
 		}
 	}()
 
@@ -95,58 +97,55 @@ func (r *MongoRepository) Find(
 func (r *MongoRepository) FindOne(
 	ctx context.Context,
 	f filter.Filter,
-) (*model.User, error) {
+) (*model.Friend, error) {
 	l := loggingutils.
 		LoggerWithRequestID(ctx, r.logger).
 		With(
 			zap.String("method", "FindOne"),
 		).Sugar()
-	u := model.User{}
-	err := r.coll.FindOne(ctx, f.ToBSON()).Decode(&u)
+	friend := model.Friend{}
+	err := r.coll.FindOne(ctx, f.ToBSON()).Decode(&friend)
 	if err == mongo.ErrNoDocuments {
 		return nil, nil
 	}
 	if err != nil {
-		l.Error("finding user", err)
+		l.Error("finding friend", err)
 	}
 
-	return &u, err
+	return &friend, err
 }
 
 func (r *MongoRepository) Create(
 	ctx context.Context,
-	args *model.User,
-) (*model.User, error) {
+	args *model.Friend,
+) (*model.Friend, error) {
 	l := loggingutils.
 		LoggerWithRequestID(ctx, r.logger).
 		With(
 			zap.String("method", "Create"),
 		).Sugar()
-	if args.Email == "" {
-		return nil, fmt.Errorf("email address is empty")
-	}
 
-	u := args
+	friend := args
 	id := uuid.New()
-	u.ID = &id
-	u.Meta = entityutils.Meta{}
-	u.UpdateMeta(
+	friend.ID = &id
+	friend.Meta = entityutils.Meta{}
+	friend.UpdateMeta(
 		ctx,
 		entityutils.CreateOp,
 	)
 
-	_, err := r.coll.InsertOne(ctx, u)
+	_, err := r.coll.InsertOne(ctx, friend)
 	if err != nil {
-		l.Error("creating user", err)
+		l.Error("creating friend", err)
 	}
 
-	return u, err
+	return friend, err
 }
 
 func (r *MongoRepository) Update(
 	ctx context.Context,
 	f filter.Filter,
-	args *model.User,
+	args *model.Friend,
 ) (int64, error) {
 	l := loggingutils.
 		LoggerWithRequestID(ctx, r.logger).
@@ -170,7 +169,7 @@ func (r *MongoRepository) Update(
 		bson.M{"$set": data},
 	)
 	if err != nil {
-		l.Error("updating users", err)
+		l.Error("updating friends", err)
 		return 0, err
 	}
 
@@ -188,7 +187,7 @@ func (r *MongoRepository) Delete(
 		).Sugar()
 	res, err := r.coll.DeleteMany(ctx, f.ToBSON())
 	if err != nil {
-		l.Error("deleting users", err)
+		l.Error("deleting friends", err)
 	}
 
 	return res.DeletedCount, err
