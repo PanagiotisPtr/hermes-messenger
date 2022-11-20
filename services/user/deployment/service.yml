@@ -18,7 +18,7 @@ spec:
         ports:
           - containerPort: 80
         env:
-          - name: LISTEN_PORT
+          - name: SERVICE_PORT
             value: "80"
           - name: REDIS_ADDRESS
             value: "redis-service:6379"

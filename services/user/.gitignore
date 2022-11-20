@@ -1,3 +1,4 @@
 protos/*.go
 config/certs/*
 .vscode
+.env

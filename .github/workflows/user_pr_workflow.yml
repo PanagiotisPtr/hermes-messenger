@@ -63,16 +63,6 @@ jobs:
         working-directory: ./services/user
         run: go mod tidy
 
-      - name: Give run permissions to run script
-        working-directory: ./services/user
-        run: chmod +x generate_config.sh
-
-      - name: Generate test config
-        working-directory: ./services/user
-        env:
-          MONGO_URI: ${{ secrets.MONGO_TEST_URI }}
-        run: ./generate_config.sh > config.test.yml
-
       - name: Set config env
         working-directory: ./services/user
         run: echo "TEST_CONFIG=$(pwd)/config.test.yml" >> $GITHUB_ENV
@@ -150,16 +140,6 @@ jobs:
       - name: Mod tidy
         working-directory: ./services/user
         run: go mod tidy
-
-      - name: Give run permissions to run script
-        working-directory: ./services/user
-        run: chmod +x generate_config.sh
-
-      - name: Generate test config
-        working-directory: ./services/user
-        env:
-          MONGO_URI: ${{ secrets.MONGO_TEST_URI }}
-        run: ./generate_config.sh > config.test.yml
 
       - name: Test
         working-directory: ./services/user
