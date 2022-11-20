@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/panagiotisptr/hermes-messenger/libs/utils"
 	"github.com/panagiotisptr/hermes-messenger/libs/utils/mongoutils"
-	"github.com/panagiotisptr/hermes-messenger/user/config"
 	"github.com/panagiotisptr/hermes-messenger/user/repository/testcases"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/fx"
@@ -22,7 +22,8 @@ func getDatabase(
 	if err != nil {
 		t.Fatal(err)
 	}
-	config, err := config.ProvideTestConfig()
+	configLocation := utils.ProvideConfigLocation()
+	config, err := mongoutils.ProvideMongoConfig(configLocation)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -30,7 +31,7 @@ func getDatabase(
 	mongoClient, err := mongoutils.ProvideMongoClient(
 		lifecycle,
 		logger,
-		&config.Mongo,
+		config,
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -38,7 +39,7 @@ func getDatabase(
 
 	mongoDb := mongoutils.ProvideMongoDatabase(
 		mongoClient,
-		&config.Mongo,
+		config,
 	)
 
 	return mongoDb
