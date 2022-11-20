@@ -8,10 +8,10 @@ import (
 )
 
 type MinioConfig struct {
-	Endpoint  string `mapstructure:"MINIO_ENDPOINT"`
-	AccessKey string `mapstructure:"MINIO_ACCESS_KEY"`
-	SecretKey string `mapstructure:"MINIO_SECRET_KEY"`
-	UseSSL    bool   `mapstructure:"MINIO_USE_SSL"`
+	MinioEndpoint  string `mapstructure:"MINIO_ENDPOINT"`
+	MinioAccessKey string `mapstructure:"MINIO_ACCESS_KEY"`
+	MinioSecretKey string `mapstructure:"MINIO_SECRET_KEY"`
+	MinioUseSSL    bool   `mapstructure:"MINIO_USE_SSL"`
 }
 
 func ProvideMinioConfig(cl *utils.ConfigLocation) (*MinioConfig, error) {
@@ -30,6 +30,11 @@ func ProvideMinioConfig(cl *utils.ConfigLocation) (*MinioConfig, error) {
 		return cfg, err
 	}
 	if err != nil && isNotFoundError(err.Error()) {
+		cfg.MinioEndpoint = viper.GetString("MINIO_ENDPOINT")
+		cfg.MinioAccessKey = viper.GetString("MINIO_ACCESS_KEY")
+		cfg.MinioSecretKey = viper.GetString("MINIO_SECRET_KEY")
+		cfg.MinioUseSSL = viper.GetBool("MINIO_USE_SSL")
+
 		return cfg, nil
 	}
 	err = viper.Unmarshal(&cfg)

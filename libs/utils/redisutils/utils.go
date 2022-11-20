@@ -39,6 +39,10 @@ func ProvideRedisConfig(cl *utils.ConfigLocation) (*RedisConfig, error) {
 		return cfg, err
 	}
 	if err != nil && isNotFoundError(err.Error()) {
+		cfg.RedisAddress = viper.GetString("REDIS_ADDRESS")
+		cfg.RedisPassword = viper.GetString("REDIS_PASSWORD")
+		cfg.RedisDB = viper.GetInt("REDIS_DB")
+
 		return cfg, nil
 	}
 	err = viper.Unmarshal(&cfg)

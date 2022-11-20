@@ -30,6 +30,9 @@ func ProvideGRPCServiceConfig(cl *utils.ConfigLocation) (*GRPCServiceConfig, err
 		return cfg, err
 	}
 	if err != nil && isNotFoundError(err.Error()) {
+		cfg.ServicePort = viper.GetInt("SERVICE_PORT")
+		cfg.GRPCReflection = viper.GetBool("GRPC_REFLECTION")
+
 		return cfg, nil
 	}
 	err = viper.Unmarshal(&cfg)

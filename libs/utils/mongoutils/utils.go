@@ -105,6 +105,9 @@ func ProvideMongoConfig(cl *utils.ConfigLocation) (*MongoConfig, error) {
 		return cfg, err
 	}
 	if err != nil && isNotFoundError(err.Error()) {
+		cfg.MongoDB = viper.GetString("MONGO_DB")
+		cfg.MongoUri = viper.GetString("MONGO_URI")
+
 		return cfg, nil
 	}
 	err = viper.Unmarshal(&cfg)
