@@ -1,6 +1,8 @@
 package redisutils
 
 import (
+	"strings"
+
 	redis "github.com/go-redis/redis/v9"
 	"github.com/panagiotisptr/hermes-messenger/libs/utils"
 	"github.com/spf13/viper"
@@ -29,9 +31,15 @@ func ProvideRedisConfig(cl *utils.ConfigLocation) (*RedisConfig, error) {
 
 	viper.AutomaticEnv()
 
+	isNotFoundError := func(m string) bool {
+		return strings.Contains(strings.ToLower(m), "not found")
+	}
 	err := viper.ReadInConfig()
-	if err != nil {
+	if err != nil && !isNotFoundError(err.Error()) {
 		return cfg, err
+	}
+	if err != nil && isNotFoundError(err.Error()) {
+		return cfg, nil
 	}
 	err = viper.Unmarshal(&cfg)
 

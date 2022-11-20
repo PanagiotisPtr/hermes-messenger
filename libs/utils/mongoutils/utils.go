@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/panagiotisptr/hermes-messenger/libs/utils"
@@ -96,9 +97,15 @@ func ProvideMongoConfig(cl *utils.ConfigLocation) (*MongoConfig, error) {
 
 	viper.AutomaticEnv()
 
+	isNotFoundError := func(m string) bool {
+		return strings.Contains(strings.ToLower(m), "not found")
+	}
 	err := viper.ReadInConfig()
-	if err != nil {
+	if err != nil && !isNotFoundError(err.Error()) {
 		return cfg, err
+	}
+	if err != nil && isNotFoundError(err.Error()) {
+		return cfg, nil
 	}
 	err = viper.Unmarshal(&cfg)
 
