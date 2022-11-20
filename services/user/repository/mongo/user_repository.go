@@ -19,7 +19,7 @@ import (
 
 const (
 	UserCollectionName = "users"
-	UserEmailIndex     = "usres_email_index"
+	UserEmailIndex     = "users_email_index"
 )
 
 type MongoRepository struct {
