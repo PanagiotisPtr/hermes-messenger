@@ -63,12 +63,11 @@ jobs:
         working-directory: ./services/user
         run: go mod tidy
 
-      - name: Set config env
-        working-directory: ./services/user
-        run: echo "MONGO_URI=${{ secrets.MONGO_URI }} MONGO_DB=user-test" >> $GITHUB_ENV
-
       - uses: gwatts/go-coverage-action@v1
         id: coverage
+        env:
+          MONGO_URI: ${{ secrets.MONGO_URI }}
+          MONGO_DB: user-test
         with:
           working-directory: ./services/user
           coverage-threshold: 0
