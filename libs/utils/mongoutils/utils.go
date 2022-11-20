@@ -4,8 +4,11 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/google/uuid"
+	"github.com/panagiotisptr/hermes-messenger/libs/utils"
+	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/bsoncodec"
 	"go.mongodb.org/mongo-driver/bson/bsonrw"
@@ -81,19 +84,45 @@ func BinaryToUuid(id interface{}) uuid.UUID {
 	return *(*uuid.UUID)(bid)
 }
 
-type Config struct {
-	Uri string
-	DB  string
+type MongoConfig struct {
+	MongoUri string `mapstructure:"MONGO_URI"`
+	MongoDB  string `mapstructure:"MONGO_DB"`
+}
+
+func ProvideMongoConfig(cl *utils.ConfigLocation) (*MongoConfig, error) {
+	cfg := &MongoConfig{}
+	viper.AddConfigPath(cl.ConfigPath)
+	viper.SetConfigName(cl.ConfigName)
+	viper.SetConfigType("env")
+
+	viper.AutomaticEnv()
+
+	isNotFoundError := func(m string) bool {
+		return strings.Contains(strings.ToLower(m), "not found")
+	}
+	err := viper.ReadInConfig()
+	if err != nil && !isNotFoundError(err.Error()) {
+		return cfg, err
+	}
+	if err != nil && isNotFoundError(err.Error()) {
+		cfg.MongoDB = viper.GetString("MONGO_DB")
+		cfg.MongoUri = viper.GetString("MONGO_URI")
+
+		return cfg, nil
+	}
+	err = viper.Unmarshal(&cfg)
+
+	return cfg, err
 }
 
 func ProvideMongoClient(
 	lc fx.Lifecycle,
 	logger *zap.Logger,
-	cfg *Config,
+	cfg *MongoConfig,
 ) (*mongo.Client, error) {
 	client, err := mongo.NewClient(
 		SetRegistryForUuids(
-			options.Client().ApplyURI(cfg.Uri),
+			options.Client().ApplyURI(cfg.MongoUri),
 		),
 	)
 	if err != nil {
@@ -122,7 +151,7 @@ func ProvideMongoClient(
 
 func ProvideMongoDatabase(
 	client *mongo.Client,
-	cfg *Config,
+	cfg *MongoConfig,
 ) *mongo.Database {
-	return client.Database(cfg.DB)
+	return client.Database(cfg.MongoDB)
 }

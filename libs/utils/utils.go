@@ -6,6 +6,8 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/spf13/viper"
 )
 
 func GetMachineIpAddress() (string, error) {
@@ -61,4 +63,46 @@ func GetEnvVariableBool(name string, defaultValue bool) bool {
 	}
 
 	return defaultValue
+}
+
+type ConfigLocation struct {
+	ConfigPath string `mapstructure:"CONFIG_PATH"`
+	ConfigName string `mapstructure:"CONFIG_NAME"`
+}
+
+func ProvideConfigLocation() *ConfigLocation {
+	path := os.Getenv("CONFIG_PATH")
+	if path == "" {
+		path = "."
+	}
+	name := os.Getenv("CONFIG_NAME")
+
+	return &ConfigLocation{
+		ConfigPath: path,
+		ConfigName: name,
+	}
+}
+
+func LoadConfigFromEnvs(config interface{}) error {
+	path := os.Getenv("CONFIG_PATH")
+	if path == "" {
+		path = "."
+	}
+	name := os.Getenv("CONFIG_NAME")
+	viper.AddConfigPath(path)
+	viper.SetConfigName(name)
+	viper.SetConfigType("env")
+
+	fmt.Println(path)
+	fmt.Println(name)
+
+	viper.AutomaticEnv()
+
+	err := viper.ReadInConfig()
+	if err != nil {
+		return err
+	}
+	err = viper.Unmarshal(&config)
+
+	return err
 }

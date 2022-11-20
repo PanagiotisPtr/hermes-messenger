@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/go-redis/redis/v9"
+	"github.com/panagiotisptr/hermes-messenger/libs/utils"
+	"github.com/panagiotisptr/hermes-messenger/libs/utils/grpcserviceutils"
 	"github.com/panagiotisptr/hermes-messenger/libs/utils/mongoutils"
 	"github.com/panagiotisptr/hermes-messenger/protos"
-	"github.com/panagiotisptr/hermes-messenger/user/config"
 	mongo_repository "github.com/panagiotisptr/hermes-messenger/user/repository/mongo"
 	"github.com/panagiotisptr/hermes-messenger/user/server"
 	"github.com/panagiotisptr/hermes-messenger/user/service"
@@ -25,28 +25,16 @@ import (
 // Provides the GRPC server instance
 func ProvideGRPCServer(
 	us *server.UserServer,
-	cfg *config.Config,
+	cfg *grpcserviceutils.GRPCServiceConfig,
 ) (*grpc.Server, error) {
 	gs := grpc.NewServer()
 	protos.RegisterUserServiceServer(gs, us)
 
-	if cfg.Service.GRPCReflection {
+	if cfg.GRPCReflection {
 		reflection.Register(gs)
 	}
 
 	return gs, nil
-}
-
-// ProvideRedisClient provides redis client
-func ProvideRedisClient(cfg *config.Config) *redis.Client {
-	return redis.NewClient(cfg.Redis)
-}
-
-// ProvideMongoConfig provides mongo config
-func ProvideMongoConfig(
-	cfg *config.Config,
-) *mongoutils.Config {
-	return &cfg.Mongo
 }
 
 // Bootstraps the application
@@ -54,7 +42,7 @@ func Bootstrap(
 	lc fx.Lifecycle,
 	client *mongo.Client,
 	gs *grpc.Server,
-	cfg *config.Config,
+	cfg *grpcserviceutils.GRPCServiceConfig,
 	logger *zap.Logger,
 ) {
 	logger.Sugar().Info("Starting user service")
@@ -62,7 +50,7 @@ func Bootstrap(
 		OnStart: func(ctx context.Context) error {
 			logger.Sugar().Info("Starting GRPC server.")
 
-			addr := fmt.Sprintf(":%d", cfg.Service.Port)
+			addr := fmt.Sprintf(":%d", cfg.ServicePort)
 			list, err := net.Listen("tcp", addr)
 			if err != nil {
 				return err
@@ -94,10 +82,11 @@ func main() {
 	app := fx.New(
 		fx.Provide(
 			ProvideLogger,
-			ProvideMongoConfig,
+			utils.ProvideConfigLocation,
+			grpcserviceutils.ProvideGRPCServiceConfig,
+			mongoutils.ProvideMongoConfig,
 			mongoutils.ProvideMongoClient,
 			mongoutils.ProvideMongoDatabase,
-			config.ProvideConfig,
 			server.ProvideUserServer,
 			service.ProvideUserService,
 			mongo_repository.ProvideUserRepository,
