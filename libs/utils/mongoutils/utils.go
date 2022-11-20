@@ -129,16 +129,13 @@ func ProvideMongoClient(
 		return nil, err
 	}
 
-	lc.Append(fx.Hook{
-		OnStart: func(ctx context.Context) error {
-			logger.Sugar().Info("Connecting to mongo")
-			err := client.Connect(ctx)
-			if err != nil {
-				return err
-			}
+	logger.Sugar().Info("Connecting to mongo")
+	err = client.Connect(context.Background())
+	if err != nil {
+		return client, err
+	}
 
-			return nil
-		},
+	lc.Append(fx.Hook{
 		OnStop: func(ctx context.Context) error {
 			logger.Sugar().Info("Disconnecting from database")
 
