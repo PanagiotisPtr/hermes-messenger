@@ -5,12 +5,15 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/go-redis/redis/v9"
-	"github.com/panagiotisptr/hermes-messenger/friends/config"
 	"github.com/panagiotisptr/hermes-messenger/friends/server"
 	"github.com/panagiotisptr/hermes-messenger/friends/server/connection"
 	"github.com/panagiotisptr/hermes-messenger/friends/server/friends"
+	"github.com/panagiotisptr/hermes-messenger/libs/utils"
+	"github.com/panagiotisptr/hermes-messenger/libs/utils/grpcclientutils"
+	"github.com/panagiotisptr/hermes-messenger/libs/utils/grpcserviceutils"
+	"github.com/panagiotisptr/hermes-messenger/libs/utils/loggingutils"
 	"github.com/panagiotisptr/hermes-messenger/libs/utils/mongoutils"
+	"github.com/panagiotisptr/hermes-messenger/libs/utils/redisutils"
 	"github.com/panagiotisptr/hermes-messenger/protos"
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxevent"
@@ -23,7 +26,7 @@ import (
 // Provides the GRPC server instance
 func ProvideGRPCServer(
 	fs *server.FriendsServer,
-	cfg *config.Config,
+	cfg *grpcserviceutils.GRPCServiceConfig,
 ) (*grpc.Server, error) {
 	gs := grpc.NewServer()
 	protos.RegisterFriendsServer(gs, fs)
@@ -35,28 +38,18 @@ func ProvideGRPCServer(
 	return gs, nil
 }
 
-func ProvideRedisClient(cfg *config.Config) *redis.Client {
-	return redis.NewClient(cfg.Redis)
-}
-
-func ProvideMongoConfig(
-	cfg *config.Config,
-) *mongoutils.MongoConfig {
-	return &cfg.MongoConfig
-}
-
 // Bootstraps the application
 func Bootstrap(
 	lc fx.Lifecycle,
 	gs *grpc.Server,
-	cfg *config.Config,
+	cfg *grpcserviceutils.GRPCServiceConfig,
 	logger *zap.Logger,
 ) {
 	logger.Sugar().Info("Starting user service")
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
 			logger.Sugar().Info("Starting GRPC server.")
-			addr := fmt.Sprintf(":%d", cfg.ListenPort)
+			addr := fmt.Sprintf(":%d", cfg.ServicePort)
 			list, err := net.Listen("tcp", addr)
 			if err != nil {
 				return err
@@ -77,45 +70,23 @@ func Bootstrap(
 	})
 }
 
-// Provides the ZAP logger
-func ProvideLogger() *zap.Logger {
-	logger, _ := zap.NewProduction()
-
-	return logger
-}
-
-// Provides user Client
-func ProvideUserClient(
-	lc fx.Lifecycle,
-	cfg *config.Config,
-) (protos.UserClient, error) {
-	userConn, err := grpc.Dial(
-		cfg.UserServiceAddress,
-		grpc.WithInsecure(),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	lc.Append(fx.Hook{
-		OnStop: func(ctx context.Context) error {
-			return userConn.Close()
-		},
-	})
-
-	return protos.NewUserClient(userConn), nil
-}
-
 func main() {
 	app := fx.New(
 		fx.Provide(
-			ProvideRedisClient,
-			ProvideLogger,
-			ProvideUserClient,
-			ProvideMongoConfig,
+			utils.ProvideConfigLocation,
+			grpcserviceutils.ProvideGRPCServiceConfig,
+			loggingutils.ProvideProductionLogger,
+
+			grpcclientutils.ProvideUserServiceClientConfig,
+			grpcclientutils.ProvideUserServiceClient,
+
+			mongoutils.ProvideMongoConfig,
 			mongoutils.ProvideMongoClient,
 			mongoutils.ProvideMongoDatabase,
-			config.ProvideConfig,
+
+			redisutils.ProvideRedisConfig,
+			redisutils.ProvideRedisClient,
+
 			server.ProvideFriendsServer,
 			friends.ProvideFriendsService,
 			connection.ProvideMongoRepository,

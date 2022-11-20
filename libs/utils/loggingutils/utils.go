@@ -22,3 +22,10 @@ func LoggerWithRequestID(
 		zap.String("request-id", requestId.String()),
 	)
 }
+
+// Provides the ZAP logger
+func ProvideProductionLogger() *zap.Logger {
+	logger, _ := zap.NewProduction()
+
+	return logger
+}

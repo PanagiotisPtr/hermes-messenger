@@ -19,13 +19,13 @@ type Friend struct {
 type Service struct {
 	logger     *zap.Logger
 	connRepo   connection.Repository
-	userClient protos.UserClient
+	userClient protos.UserServiceClient
 }
 
 func ProvideFriendsService(
 	logger *zap.Logger,
 	connRepo connection.Repository,
-	userClient protos.UserClient,
+	userClient protos.UserServiceClient,
 ) *Service {
 	return &Service{
 		logger:     logger,
@@ -38,7 +38,7 @@ func ProvideFriendsService(
 func (s *Service) usersExists(ctx context.Context, ids []uuid.UUID) error {
 	for _, id := range ids {
 		userResp, err := s.userClient.GetUser(ctx, &protos.GetUserRequest{
-			Uuid: id.String(),
+			Id: id.String(),
 		})
 		if err != nil {
 			return err
