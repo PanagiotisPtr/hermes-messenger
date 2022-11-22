@@ -9,8 +9,8 @@ type FriendStatus string
 
 const (
 	FriendStatusAccepted FriendStatus = "accepted"
-	Pending              FriendStatus = "pending"
-	Declined             FriendStatus = "declined"
+	FriendStatusPending  FriendStatus = "pending"
+	FriendStatusDeclined FriendStatus = "declined"
 )
 
 // Friend struct representing a Friend object

@@ -2,14 +2,13 @@ package mongo
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/panagiotisptr/hermes-messenger/friends/model"
+	"github.com/panagiotisptr/hermes-messenger/friends/repository"
 	"github.com/panagiotisptr/hermes-messenger/libs/utils/entityutils"
 	"github.com/panagiotisptr/hermes-messenger/libs/utils/entityutils/filter"
 	"github.com/panagiotisptr/hermes-messenger/libs/utils/loggingutils"
-	"github.com/panagiotisptr/hermes-messenger/friend/model"
-	"github.com/panagiotisptr/hermes-messenger/friend/repository"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -19,8 +18,8 @@ import (
 
 const (
 	FriendCollectionName = "friends"
-	UserIndex     = "user_index"
-	FriendIndex     = "friend_index"
+	UserIndex            = "user_index"
+	FriendIndex          = "friend_index"
 )
 
 type MongoRepository struct {
