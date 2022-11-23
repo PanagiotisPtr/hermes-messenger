@@ -7,6 +7,18 @@ import (
 	"go.uber.org/zap"
 )
 
+func GetLoggerWith(
+	ctx context.Context,
+	l *zap.Logger,
+	args ...func(context.Context, *zap.Logger) *zap.Logger,
+) *zap.Logger {
+	for _, f := range args {
+		l = f(ctx, l)
+	}
+
+	return l
+}
+
 func LoggerWithRequestID(
 	ctx context.Context,
 	l *zap.Logger,
@@ -20,6 +32,22 @@ func LoggerWithRequestID(
 
 	return l.With(
 		zap.String("request-id", requestId.String()),
+	)
+}
+
+func LoggerWithUserID(
+	ctx context.Context,
+	l *zap.Logger,
+) *zap.Logger {
+	userId, ok := ctx.Value("user-id").(uuid.UUID)
+	if !ok {
+		return l.With(
+			zap.String("user-id", "none"),
+		)
+	}
+
+	return l.With(
+		zap.String("user-id", userId.String()),
 	)
 }
 

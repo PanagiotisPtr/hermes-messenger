@@ -19,7 +19,6 @@ import (
 const (
 	FriendCollectionName = "friends"
 	UserIndex            = "user_index"
-	FriendIndex          = "friend_index"
 )
 
 type MongoRepository struct {
@@ -59,11 +58,6 @@ func (r *MongoRepository) initIndexes(
 				Keys: bson.D{{Key: "userId", Value: 1}},
 				Options: options.Index().
 					SetName(UserIndex),
-			},
-			{
-				Keys: bson.D{{Key: "friendId", Value: 1}},
-				Options: options.Index().
-					SetName(FriendIndex),
 			},
 		},
 	)

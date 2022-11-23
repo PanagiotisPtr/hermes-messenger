@@ -1,8 +1,11 @@
 package grpcserviceutils
 
 import (
+	"context"
+	"fmt"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/panagiotisptr/hermes-messenger/libs/utils"
 	"github.com/spf13/viper"
 )
@@ -38,4 +41,21 @@ func ProvideGRPCServiceConfig(cl *utils.ConfigLocation) (*GRPCServiceConfig, err
 	err = viper.Unmarshal(&cfg)
 
 	return cfg, err
+}
+
+func GetUserID(ctx context.Context) (uuid.UUID, error) {
+	userId, ok := ctx.Value("user-id").(uuid.UUID)
+	if !ok {
+		return uuid.UUID{}, fmt.Errorf("missing userId in context")
+	}
+
+	return userId, nil
+}
+
+func WithUserID(ctx context.Context, id uuid.UUID) context.Context {
+	return context.WithValue(
+		ctx,
+		"user-id",
+		id,
+	)
 }

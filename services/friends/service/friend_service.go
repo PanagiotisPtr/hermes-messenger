@@ -2,12 +2,11 @@ package service
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/google/uuid"
 	"github.com/panagiotisptr/hermes-messenger/friends/model"
 	"github.com/panagiotisptr/hermes-messenger/friends/repository"
 	"github.com/panagiotisptr/hermes-messenger/libs/utils/entityutils/filter"
+	"github.com/panagiotisptr/hermes-messenger/libs/utils/grpcserviceutils"
 	"github.com/panagiotisptr/hermes-messenger/libs/utils/loggingutils"
 	"go.uber.org/zap"
 )
@@ -32,54 +31,182 @@ func ProvideFriendService(
 	}
 }
 
-func (s *FriendService) AddFriend(
+func (s *FriendService) Create(
 	ctx context.Context,
 	args *model.Friend,
 ) (*model.Friend, error) {
-	l := loggingutils.
-		LoggerWithRequestID(ctx, s.logger).
-		With(
-			zap.String("method", "AddFriend"),
-		).Sugar()
+	l := loggingutils.GetLoggerWith(
+		ctx,
+		s.logger,
+		loggingutils.LoggerWithRequestID,
+		loggingutils.LoggerWithUserID,
+	).With(
+		zap.String("method", "AddFriend"),
+	).Sugar()
 
-	l.Info("hello")
-
-	return nil, nil
-}
-
-// CreateFriend creates a new friend
-func (s *FriendService) CreateFriend(
-	ctx context.Context,
-	args *model.Friend,
-) (*model.Friend, error) {
-	return s.friendRepo.Create(ctx, args)
-}
-
-// GetFriend returns a friend from their (uu)id
-func (s *FriendService) GetFriend(
-	ctx context.Context,
-	id uuid.UUID,
-) (*model.Friend, error) {
-	f := filter.NewFilter()
-	f.Add("id", filter.Eq, id)
-
-	return s.friendRepo.FindOne(ctx, f)
-}
-
-func (s *FriendService) GetFriendByEmail(
-	ctx context.Context,
-	email string,
-) (*model.Friend, error) {
-	f := filter.NewFilter()
-	f.Add("email", filter.Eq, email)
-
-	u, err := s.friendRepo.FindOne(ctx, f)
+	userId, err := grpcserviceutils.GetUserID(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if u == nil {
-		return nil, fmt.Errorf("Could not find friend with email \"%s\"", email)
+
+	// User side
+	f := filter.NewFilter()
+	f.Add("userId", filter.Eq, userId)
+	f.Add("friendId", filter.Eq, args.FriendId)
+	ofr, err := s.friendRepo.FindOne(ctx, f)
+	if err != nil {
+		l.Error("failed to find friend", err)
+
+		return nil, err
 	}
 
-	return u, nil
+	if ofr != nil {
+		switch ofr.Status {
+		case model.FriendStatusPendingFriend:
+			return ofr, nil
+		case model.FriendStatusDeclined:
+			ofr.Status = model.FriendStatusPendingFriend
+			_, err := s.friendRepo.Update(ctx, f, ofr)
+			if err != nil {
+				l.Error("failed to update friend", err)
+			}
+		case model.FriendStatusPendingUser:
+			ofr.Status = model.FriendStatusAccepted
+			_, err := s.friendRepo.Update(ctx, f, ofr)
+			if err != nil {
+				l.Error("failed to update friend", err)
+			}
+		}
+	} else {
+		_, err = s.friendRepo.Create(ctx, &model.Friend{
+			UserId:   userId,
+			FriendId: args.FriendId,
+			Status:   model.FriendStatusPendingFriend,
+		})
+		if err != nil {
+			l.Error("failed to create friend", err)
+		}
+	}
+
+	// Friend side
+	f = filter.NewFilter()
+	f.Add("userId", filter.Eq, args.FriendId)
+	f.Add("friendId", filter.Eq, userId)
+	tfr, err := s.friendRepo.FindOne(ctx, f)
+	if err != nil {
+		l.Error("failed to find friend", err)
+
+		return ofr, err
+	}
+
+	if tfr != nil {
+		switch tfr.Status {
+		case model.FriendStatusPendingFriend:
+			ofr.Status = model.FriendStatusAccepted
+			_, err := s.friendRepo.Update(ctx, f, ofr)
+			if err != nil {
+				l.Error("failed to update friend", err)
+
+				return ofr, err
+			}
+		}
+	} else {
+		_, err = s.friendRepo.Create(ctx, &model.Friend{
+			UserId:   userId,
+			FriendId: args.FriendId,
+			Status:   model.FriendStatusPendingUser,
+		})
+		if err != nil {
+			l.Error("failed to create friend", err)
+		}
+	}
+
+	return ofr, err
+}
+
+func (s *FriendService) Delete(
+	ctx context.Context,
+	args *model.Friend,
+) error {
+	l := loggingutils.GetLoggerWith(
+		ctx,
+		s.logger,
+		loggingutils.LoggerWithRequestID,
+		loggingutils.LoggerWithUserID,
+	).With(
+		zap.String("method", "DeleteFriend"),
+	).Sugar()
+
+	userId, err := grpcserviceutils.GetUserID(ctx)
+	if err != nil {
+		return err
+	}
+
+	// User side
+	f := filter.NewFilter()
+	f.Add("userId", filter.Eq, userId)
+	f.Add("friendId", filter.Eq, args.FriendId)
+	ofr, err := s.friendRepo.FindOne(ctx, f)
+	if err != nil {
+		l.Error("failed to find friend", err)
+
+		return err
+	}
+	if ofr == nil {
+		return nil
+	}
+	_, err = s.friendRepo.Delete(ctx, f)
+	if err != nil {
+		l.Error("failed to delete friend", err)
+
+		return err
+	}
+
+	// Friend side
+	f = filter.NewFilter()
+	f.Add("userId", filter.Eq, args.FriendId)
+	f.Add("friendId", filter.Eq, userId)
+	tfr, err := s.friendRepo.FindOne(ctx, f)
+	if err != nil {
+		l.Error("failed to find friend", err)
+
+		return err
+	}
+	if tfr == nil {
+		return nil
+	}
+	_, err = s.friendRepo.Delete(ctx, f)
+	if err != nil {
+		l.Error("failed to delete friend", err)
+	}
+
+	return err
+}
+
+func (s *FriendService) Find(
+	ctx context.Context,
+) (<-chan *model.Friend, error) {
+	ch := make(chan *model.Friend)
+	l := loggingutils.GetLoggerWith(
+		ctx,
+		s.logger,
+		loggingutils.LoggerWithRequestID,
+		loggingutils.LoggerWithUserID,
+	).With(
+		zap.String("method", "GetFriends"),
+	).Sugar()
+
+	userId, err := grpcserviceutils.GetUserID(ctx)
+	if err != nil {
+		return ch, err
+	}
+
+	f := filter.NewFilter()
+	f.Add("userId", filter.Eq, userId)
+	frs, err := s.friendRepo.Find(ctx, f)
+	if err != nil {
+		l.Error("failed to find friends", err)
+	}
+
+	return frs, err
 }

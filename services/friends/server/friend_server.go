@@ -3,41 +3,46 @@ package server
 import (
 	"context"
 
-	"github.com/panagiotisptr/hermes-messenger/friends/server/friends"
+	friendApp "github.com/panagiotisptr/hermes-messenger/friends/app"
+	"github.com/panagiotisptr/hermes-messenger/friends/model"
 	"github.com/panagiotisptr/hermes-messenger/protos"
 	"go.uber.org/zap"
 
 	"github.com/google/uuid"
 )
 
-type FriendsServer struct {
-	logger  *zap.Logger
-	service *friends.Service
-	protos.UnimplementedFriendsServer
+type FriendServer struct {
+	logger *zap.Logger
+	app    *friendApp.App
+	protos.UnimplementedFriendServiceServer
 }
 
 func ProvideFriendsServer(
 	logger *zap.Logger,
-	service *friends.Service,
-) (*FriendsServer, error) {
-	return &FriendsServer{
-		logger:  logger,
-		service: service,
+	app *friendApp.App,
+) (*FriendServer, error) {
+	return &FriendServer{
+		logger: logger.With(
+			zap.String("server", "FriendServer"),
+		),
+		app: app,
 	}, nil
 }
 
-func friendToEntity(f *friends.Friend) *protos.Friend {
+func friendToEntity(f *model.Friend) *protos.Friend {
 	if f == nil {
 		return nil
 	}
 
 	return &protos.Friend{
-		FriendUuid: f.FriendUuid.String(),
-		Status:     f.Status,
+		Id:       f.ID.String(),
+		UserId:   f.UserId.String(),
+		FriendId: f.FriendId.String(),
+		Status:   protos.Status(f.Status),
 	}
 }
 
-func (fs *FriendsServer) AddFriend(
+func (fs *FriendServer) AddFriend(
 	ctx context.Context,
 	request *protos.AddFriendRequest,
 ) (*protos.AddFriendResponse, error) {
@@ -55,7 +60,7 @@ func (fs *FriendsServer) AddFriend(
 	return response, err
 }
 
-func (fs *FriendsServer) GetFriends(
+func (fs *FriendServer) GetFriends(
 	ctx context.Context,
 	request *protos.GetFriendsRequest,
 ) (*protos.GetFriendsResponse, error) {
@@ -78,7 +83,7 @@ func (fs *FriendsServer) GetFriends(
 	return response, err
 }
 
-func (fs *FriendsServer) RemoveFriend(
+func (fs *FriendServer) RemoveFriend(
 	ctx context.Context,
 	request *protos.RemoveFriendRequest,
 ) (*protos.RemoveFriendResponse, error) {

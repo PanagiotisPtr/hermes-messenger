@@ -2,23 +2,24 @@ syntax = "proto3";
 
 option go_package = "github.com/panagiotisptr/hermes-messenger/friends/protos";
 
-service Friends {
+service FriendService {
   rpc AddFriend(AddFriendRequest) returns (AddFriendResponse);
-  rpc RemoveFriend(RemoveFriendRequest) returns (RemoveFriendResponse);
+  rpc DeleteFriend(DeleteFriendRequest) returns (DeleteFriendResponse);
   rpc GetFriends(GetFriendsRequest) returns (stream Friend);
 }
 
 enum Status {
-  Accepted = "accepted";
-  Pending = "pending";
-  Declined = "declined";
+  PendingFriend = 0;
+  PendingUser = 1;
+  Accepted = 2;
+  Declined = 3;
 }
 
 message Friend {
   string id = 1;
   string user_id = 2;
   string friend_id = 3;
-  Status friend_status = 4; 
+  Status status = 4; 
 }
 
 message AddFriendRequest {
@@ -29,10 +30,10 @@ message AddFriendResponse {
   Friend friend = 1;
 }
 
-message RemoveFriendRequest {
+message DeleteFriendRequest {
   string friend_id = 1;
 }
 
-message RemoveFriendResponse {}
+message DeleteFriendResponse {}
 
 message GetFriendsRequest {}
