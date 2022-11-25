@@ -2,14 +2,13 @@ package server
 
 import (
 	"context"
-	"fmt"
 	"time"
 
+	"github.com/panagiotisptr/hermes-messenger/libs/utils/grpcserviceutils"
 	"github.com/panagiotisptr/hermes-messenger/protos"
 	"github.com/panagiotisptr/hermes-messenger/user/model"
 	"github.com/panagiotisptr/hermes-messenger/user/service"
 	"go.uber.org/zap"
-	"google.golang.org/grpc/metadata"
 
 	"github.com/google/uuid"
 )
@@ -46,22 +45,6 @@ func userToEntity(u *model.User) *protos.User {
 	}
 }
 
-func metadataToContext(ctx context.Context, keys ...string) (context.Context, error) {
-	m, ok := metadata.FromIncomingContext(ctx)
-	if !ok {
-		return ctx, fmt.Errorf("missing grpc metadata in request")
-	}
-	for _, k := range keys {
-		values := m.Get(k)
-		if len(values) == 0 {
-			return ctx, fmt.Errorf("missing key '%s' in request metadata", k)
-		}
-		ctx = context.WithValue(ctx, k, values[0])
-	}
-
-	return ctx, nil
-}
-
 // CreateUser creates a new user
 func (us *UserServer) CreateUser(
 	ctx context.Context,
@@ -69,7 +52,7 @@ func (us *UserServer) CreateUser(
 ) (*protos.CreateUserResponse, error) {
 	ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
 	defer cancel()
-	ctx, err := metadataToContext(ctx, "request-id")
+	ctx, err := grpcserviceutils.LoadMetadataValuesToContext(ctx, "request-id")
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +81,7 @@ func (us *UserServer) GetUser(
 	if err != nil {
 		return nil, err
 	}
-	ctx, err = metadataToContext(ctx, "user-id", "request-id")
+	ctx, err = grpcserviceutils.LoadMetadataValuesToContext(ctx, "user-id", "request-id")
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +105,7 @@ func (us *UserServer) GetUserByEmail(
 ) (*protos.GetUserByEmailResponse, error) {
 	ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
 	defer cancel()
-	ctx, err := metadataToContext(ctx, "user-id", "request-id")
+	ctx, err := grpcserviceutils.LoadMetadataValuesToContext(ctx, "user-id", "request-id")
 	if err != nil {
 		return nil, err
 	}

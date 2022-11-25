@@ -24,7 +24,9 @@ func ProvideUserService(
 	userRepo repository.UserRepository,
 ) *UserService {
 	return &UserService{
-		logger:   logger,
+		logger: logger.With(
+			zap.String("service", "UserService"),
+		),
 		userRepo: userRepo,
 	}
 }
