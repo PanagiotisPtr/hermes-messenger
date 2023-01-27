@@ -1,50 +1,46 @@
 package config
 
 import (
+	"flag"
+	"path/filepath"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/panagiotisptr/hermes-messenger/libs/utils"
+	"github.com/spf13/viper"
 )
 
 // The application config
 type Config struct {
-	UUID                      uuid.UUID
-	ListenPort                int
-	GRPCReflection            bool
-	RedisAddress              string
-	RedisPassword             string
-	RedisDatabase             int
-	RefreshTokenDuration      time.Duration
-	AccessTokenDuration       time.Duration
-	KeyPairGenerationInterval time.Duration
-	UserServiceAddress        string
+	ListenPort           int           `mapstructure:"listenPort"`
+	GRPCReflection       bool          `mapstructure:"grpcReflection"`
+	RedisAddress         string        `mapstructure:"redisAddress"`
+	RedisPassword        string        `mapstructure:"redisPassword"`
+	RedisDatabase        int           `mapstructure:"redisDatabase"`
+	AMQPURI              string        `mapstructure:"amqpURI"`
+	RefreshTokenDuration time.Duration `mapstructure:"refreshTokenDuration"`
+	AccessTokenDuration  time.Duration `mapstructure:"accessTokenDuration"`
 }
 
 // Provides the application config
-func ProvideConfig() *Config {
-	secondsInDay := 60 * 60 * 24
-	secondsInHour := 60 * 60
-	listenPort := utils.GetEnvVariableInt("LISTEN_PORT", 80)
-	redisAddress := utils.GetEnvVariableString("REDIS_ADDRESS", "localhost:6379")
-	redisPassword := utils.GetEnvVariableString("REDIS_PASSWORD", "")
-	redisDatabase := utils.GetEnvVariableInt("REDIS_DB", 0)
-	grpcReflection := utils.GetEnvVariableBool("GRPC_REFLECTION", false)
-	refreshTokenDurationSeconds := utils.GetEnvVariableInt("REFRESH_TOKEN_EXP_SEC", secondsInDay)
-	accessTokenDurationSeconds := utils.GetEnvVariableInt("ACCESS_TOKEN_EXP_SEC", secondsInHour)
-	keyPairGenerationInterval := utils.GetEnvVariableInt("KEY_PAIR_GENERATION_INTERVAL", secondsInDay)
-	userServiceAddress := utils.GetEnvVariableString("USER_SERVICE_ADDR", "localhost:8080")
+func ProvideConfig() (*Config, error) {
+	configPath := flag.Lookup("config").Value.(flag.Getter).Get().(string)
+	viper.SetConfigName(filepath.Base(configPath))
+	viper.AddConfigPath(filepath.Dir(configPath))
 
-	return &Config{
-		UUID:                      uuid.New(),
-		ListenPort:                listenPort,
-		GRPCReflection:            grpcReflection,
-		RedisAddress:              redisAddress,
-		RedisPassword:             redisPassword,
-		RedisDatabase:             redisDatabase,
-		RefreshTokenDuration:      time.Second * time.Duration(refreshTokenDurationSeconds),
-		AccessTokenDuration:       time.Second * time.Duration(accessTokenDurationSeconds),
-		KeyPairGenerationInterval: time.Second * time.Duration(keyPairGenerationInterval),
-		UserServiceAddress:        userServiceAddress,
+	if err := viper.ReadInConfig(); err != nil {
+		return nil, err
 	}
+
+	cfg := &Config{}
+	if err := viper.Unmarshal(cfg); err != nil {
+		return nil, err
+	}
+
+	// we get these values from secrets so they shouldn't be in the config
+	cfg.RedisAddress = utils.GetEnvVariableString("REDIS_ADDRESS", "localhost:6379")
+	cfg.RedisPassword = utils.GetEnvVariableString("REDIS_PASSWORD", "")
+	cfg.RedisDatabase = utils.GetEnvVariableInt("REDIS_DB", 0)
+	cfg.AMQPURI = utils.GetEnvVariableString("AMQP_URI", "amqp://guest:guest@localhost:5672")
+
+	return cfg, nil
 }

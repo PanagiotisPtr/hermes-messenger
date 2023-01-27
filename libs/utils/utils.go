@@ -4,10 +4,9 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
-
-	"github.com/spf13/viper"
 )
 
 func GetMachineIpAddress() (string, error) {
@@ -71,38 +70,10 @@ type ConfigLocation struct {
 }
 
 func ProvideConfigLocation() *ConfigLocation {
-	path := os.Getenv("CONFIG_PATH")
-	if path == "" {
-		path = "."
-	}
-	name := os.Getenv("CONFIG_NAME")
+	path := os.Getenv("CONFIG")
 
 	return &ConfigLocation{
-		ConfigPath: path,
-		ConfigName: name,
+		ConfigPath: filepath.Dir(path),
+		ConfigName: filepath.Base(path),
 	}
-}
-
-func LoadConfigFromEnvs(config interface{}) error {
-	path := os.Getenv("CONFIG_PATH")
-	if path == "" {
-		path = "."
-	}
-	name := os.Getenv("CONFIG_NAME")
-	viper.AddConfigPath(path)
-	viper.SetConfigName(name)
-	viper.SetConfigType("env")
-
-	fmt.Println(path)
-	fmt.Println(name)
-
-	viper.AutomaticEnv()
-
-	err := viper.ReadInConfig()
-	if err != nil {
-		return err
-	}
-	err = viper.Unmarshal(&config)
-
-	return err
 }

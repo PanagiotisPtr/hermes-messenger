@@ -8,14 +8,8 @@ import (
 	"github.com/google/uuid"
 )
 
-const (
-	RefreshKeyType = "refresh"
-	AccessKeyType  = "access"
-)
-
 type KeyPair struct {
-	Uuid       uuid.UUID
-	keyType    string
+	kid        uuid.UUID
 	publicKey  *rsa.PublicKey
 	privateKey *rsa.PrivateKey
 }
@@ -25,7 +19,7 @@ func GenerateRSAKeyPair(keyType string) (KeyPair, error) {
 	privateKey, err := rsa.GenerateKey(rand.Reader, 4096)
 	if err != nil {
 		return KeyPair{
-			Uuid:       kid,
+			kid:        kid,
 			publicKey:  nil,
 			privateKey: nil,
 		}, fmt.Errorf("Could not generate RSA key pair")
@@ -33,8 +27,7 @@ func GenerateRSAKeyPair(keyType string) (KeyPair, error) {
 	publicKey := &privateKey.PublicKey
 
 	return KeyPair{
-		Uuid:       kid,
-		keyType:    keyType,
+		kid:        kid,
 		publicKey:  publicKey,
 		privateKey: privateKey,
 	}, nil

@@ -2,18 +2,18 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"net"
-	"time"
 
-	redis "github.com/go-redis/redis/v9"
+	"github.com/panagiotisptr/hermes-messenger/libs/utils"
+	"github.com/panagiotisptr/hermes-messenger/libs/utils/grpcserviceutils"
+	"github.com/panagiotisptr/hermes-messenger/libs/utils/loggingutils"
+	"github.com/panagiotisptr/hermes-messenger/libs/utils/rabbitmqutils"
+	"github.com/panagiotisptr/hermes-messenger/libs/utils/redisutils"
 	"github.com/panagiotisptr/hermes-messenger/protos"
 	"github.com/panagiotisptr/hermes-messenger/services/authentication/server"
 	"github.com/panagiotisptr/hermes-messenger/services/authentication/server/authentication"
-	"github.com/panagiotisptr/hermes-messenger/services/authentication/server/config"
-	"github.com/panagiotisptr/hermes-messenger/services/authentication/server/credentials"
-	"github.com/panagiotisptr/hermes-messenger/services/authentication/server/keys"
-	"github.com/panagiotisptr/hermes-messenger/services/authentication/server/token"
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxevent"
 	"go.uber.org/zap"
@@ -25,7 +25,7 @@ import (
 // Provides the GRPC server instance
 func ProvideGRPCServer(
 	as *server.AuthenticationServer,
-	cfg *config.Config,
+	cfg *grpcserviceutils.GRPCServiceConfig,
 ) (*grpc.Server, error) {
 	gs := grpc.NewServer()
 	protos.RegisterAuthenticationServer(gs, as)
@@ -37,19 +37,11 @@ func ProvideGRPCServer(
 	return gs, nil
 }
 
-func ProvideRedisClient(cfg *config.Config) *redis.Client {
-	return redis.NewClient(&redis.Options{
-		Addr:     cfg.RedisAddress,
-		Password: cfg.RedisPassword,
-		DB:       cfg.RedisDatabase,
-	})
-}
-
 // Bootstraps the application
 func Bootstrap(
 	lc fx.Lifecycle,
 	gs *grpc.Server,
-	cfg *config.Config,
+	cfg *grpcserviceutils.GRPCServiceConfig,
 	service *authentication.Service,
 	logger *zap.Logger,
 ) {
@@ -57,20 +49,13 @@ func Bootstrap(
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
 			logger.Sugar().Info("Starting GRPC server.")
-			addr := fmt.Sprintf(":%d", cfg.ListenPort)
+			addr := fmt.Sprintf(":%d", cfg.ServicePort)
 			list, err := net.Listen("tcp", addr)
 			if err != nil {
 				return err
 			} else {
 				logger.Sugar().Info("Listening on " + addr)
 			}
-
-			service.GenerateKeyPair(ctx, cfg.KeyPairGenerationInterval)
-			go func() {
-				for range time.Tick(cfg.KeyPairGenerationInterval) {
-					service.GenerateKeyPair(ctx, cfg.KeyPairGenerationInterval)
-				}
-			}()
 
 			go gs.Serve(list)
 
@@ -85,47 +70,17 @@ func Bootstrap(
 	})
 }
 
-// Provides the ZAP logger
-func ProvideLogger() *zap.Logger {
-	logger, _ := zap.NewProduction()
-
-	return logger
-}
-
-// Provides the Friends client instance
-func ProvideUserClient(
-	lc fx.Lifecycle,
-	cfg *config.Config,
-) (protos.UserClient, error) {
-	userConn, err := grpc.Dial(
-		cfg.UserServiceAddress,
-		grpc.WithInsecure(),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	lc.Append(fx.Hook{
-		OnStop: func(ctx context.Context) error {
-			return userConn.Close()
-		},
-	})
-
-	return protos.NewUserClient(userConn), nil
-}
-
 func main() {
+	flag.Parse()
 	app := fx.New(
 		fx.Provide(
-			ProvideRedisClient,
-			ProvideLogger,
-			ProvideUserClient,
-			config.ProvideConfig,
-			server.ProvideAuthenticationServer,
-			authentication.ProvideAuthenticationService,
-			token.ProvideTokenRepository,
-			keys.ProvideRedisKeysRepository,
-			credentials.ProvideRedisRepository,
+			loggingutils.ProvideProductionLogger,
+			utils.ProvideConfigLocation,
+			grpcserviceutils.ProvideGRPCServiceConfig,
+			redisutils.ProvideRedisConfig,
+			redisutils.ProvideRedisClient,
+			rabbitmqutils.ProvideAmqpConfig,
+			rabbitmqutils.ProvideAmqpChannel,
 			ProvideGRPCServer,
 		),
 		fx.Invoke(Bootstrap),

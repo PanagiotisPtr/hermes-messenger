@@ -20,7 +20,6 @@ import (
 )
 
 type Service struct {
-	selfUuid              uuid.UUID
 	logger                *zap.Logger
 	refreshKid            uuid.UUID
 	accessKid             uuid.UUID
@@ -29,7 +28,6 @@ type Service struct {
 	credentialsRepository credentials.Repository
 	refreshTokenDuration  time.Duration
 	accessTokenDuration   time.Duration
-	userClient            protos.UserClient
 }
 
 func ProvideAuthenticationService(
@@ -38,17 +36,14 @@ func ProvideAuthenticationService(
 	tokenRepository token.Repository,
 	keysRepository keys.Repository,
 	credentialsRepository credentials.Repository,
-	userClient protos.UserClient,
 ) (*Service, error) {
 	service := &Service{
-		selfUuid:              cfg.UUID,
 		logger:                logger,
 		tokenRepository:       tokenRepository,
 		keysRepository:        keysRepository,
 		credentialsRepository: credentialsRepository,
 		refreshTokenDuration:  cfg.RefreshTokenDuration,
 		accessTokenDuration:   cfg.AccessTokenDuration,
-		userClient:            userClient,
 	}
 
 	return service, nil
